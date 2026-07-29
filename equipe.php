@@ -17,11 +17,11 @@ $agents = array(
   array(
     'name' => 'Darcin N’naka',
     'role' => 'Sales Manager',
-    'email' => 'cishugil1@gmail.com',
+    'email' => 'cishugil11@gmail.com',
     'phone' => '+243 977 589 764',
     'whatsapp' => '+243 977 589 764',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
-    'image' => 'assets/img/person/vide.png',
+    'image' => 'assets/img/person/darcin.png',
     'placeholder' => true
   ),
   array(
@@ -31,7 +31,7 @@ $agents = array(
     'phone' => '+243 998 445 575',
     'whatsapp' => '+243 998 445 575',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
-    'image' => 'assets/img/person/vide.png',
+    'image' => 'assets/img/person/elie.jpeg',
     'placeholder' => true
   ),
   array(
@@ -51,7 +51,7 @@ $agents = array(
     'phone' => '+234 999 304 030',
     'whatsapp' => '+86 132 4168 7081',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
-    'image' => 'assets/img/person/arno.jpeg',
+    'image' => 'assets/img/person/arno.png',
     'placeholder' => false
   ),
   array(
