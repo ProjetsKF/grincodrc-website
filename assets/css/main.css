@@ -5258,10 +5258,14 @@ section,
 }
 
 .team-agent-photo {
-  flex: 0 0 280px;
-  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 260px;
+  width: 100%;
+  height: 260px;
   overflow: hidden;
-  background: #F5F7F5;
+  background: #F4F7F4;
 }
 
 .team-agent-photo img {
@@ -5269,15 +5273,35 @@ section,
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 
 .team-agent-photo.team-agent-placeholder {
-  background: #F5F7F5;
+  background: #F4F7F4;
 }
 
 .team-agent-photo.team-agent-placeholder img {
-  padding: 45px;
+  width: auto;
+  height: auto;
+  max-width: 65%;
+  max-height: 65%;
   object-fit: contain;
+  object-position: center;
+  padding: 0;
+}
+
+@media (max-width: 991px) {
+  .team-agent-photo {
+    flex-basis: 240px;
+    height: 240px;
+  }
+}
+
+@media (max-width: 575px) {
+  .team-agent-photo {
+    flex-basis: 280px;
+    height: 280px;
+  }
 }
 
 .team-agent-content {
@@ -5418,11 +5442,6 @@ section,
     align-items: flex-start;
     flex-direction: column;
     padding: 25px;
-  }
-
-  .team-agent-photo {
-    flex-basis: 250px;
-    height: 250px;
   }
 
   .team-contact-cta-inner {

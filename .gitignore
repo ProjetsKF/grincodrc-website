@@ -1,0 +1,22 @@
+# Configuration locale
+config/mail.php
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+tmp/
+
+# Environnement
+.env
+.env.local
+
+# Dossiers IDE
+.vscode/
+.idea/
+
+# Fichiers Windows
+Thumbs.db
+Desktop.ini

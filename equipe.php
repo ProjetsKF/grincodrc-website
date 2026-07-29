@@ -21,8 +21,8 @@ $agents = array(
     'phone' => '+243 977 589 764',
     'whatsapp' => '+243 977 589 764',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
-    'image' => 'assets/img/person/darcin.png',
-    'placeholder' => true
+    'image' => 'assets/img/person/darcin.jpg',
+    'placeholder' => false
   ),
   array(
     'name' => 'Elie Nzeza',
@@ -32,7 +32,7 @@ $agents = array(
     'whatsapp' => '+243 998 445 575',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
     'image' => 'assets/img/person/elie.jpeg',
-    'placeholder' => true
+    'placeholder' => false
   ),
   array(
     'name' => 'Carine Ndungo',
@@ -51,7 +51,7 @@ $agents = array(
     'phone' => '+234 999 304 030',
     'whatsapp' => '+86 132 4168 7081',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
-    'image' => 'assets/img/person/arno.png',
+    'image' => 'assets/img/person/arno.jpeg',
     'placeholder' => false
   ),
   array(
