@@ -2,48 +2,14 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-function contact_redirect()
-{
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_write_close();
-    }
-
-    header('Location: contact.php');
-    exit;
-}
-
-function contact_set_flash($type, $message, $errors)
-{
-    unset($_SESSION['contact_success'], $_SESSION['contact_error'], $_SESSION['contact_validation_errors']);
-
-    if ($type === 'success') {
-        $_SESSION['contact_success'] = $message;
-    } else {
-        $_SESSION['contact_error'] = $message;
-    }
-
-    if (is_array($errors) && !empty($errors)) {
-        $_SESSION['contact_validation_errors'] = array_values($errors);
-    }
-}
+require_once __DIR__ . '/includes/form-security.php';
+grinco_apply_form_security_headers();
+grinco_start_secure_session();
 
 function contact_log($message)
 {
     global $contactRequestId;
     error_log('[GRINCO contact form][' . $contactRequestId . '] ' . $message);
-}
-
-function contact_post_value($name)
-{
-    if (!isset($_POST[$name]) || !is_scalar($_POST[$name])) {
-        return '';
-    }
-
-    return (string) $_POST[$name];
 }
 
 function contact_capture_old_input()
@@ -52,76 +18,20 @@ function contact_capture_old_input()
     $oldInput = array();
 
     foreach ($fields as $field) {
-        $oldInput[$field] = trim(strip_tags(contact_post_value($field)));
+        $oldInput[$field] = grinco_normalize_text(strip_tags(grinco_post_value($field)), $field === 'message');
     }
 
     return $oldInput;
 }
 
-function contact_clean_field($name, $label, $maxLength, $multiline, &$errors)
+function contact_add_field_errors(&$errors, &$fieldErrors, $field, $newErrors)
 {
-    $value = strip_tags(contact_post_value($name));
-    $value = preg_replace('/\r\n?/', "\n", $value);
-
-    if ($multiline) {
-        $value = preg_replace('/[ \t]+/u', ' ', $value);
-        $value = preg_replace('/\n{3,}/u', "\n\n", $value);
-    } else {
-        $value = preg_replace('/\s+/u', ' ', $value);
+    foreach ($newErrors as $newError) {
+        $errors[] = $newError;
+        if (empty($fieldErrors[$field])) {
+            $fieldErrors[$field] = $newError;
+        }
     }
-
-    $value = trim($value);
-
-    if (mb_strlen($value, 'UTF-8') > $maxLength) {
-        $errors[] = $label . ' dépasse la longueur autorisée.';
-        return mb_substr($value, 0, $maxLength, 'UTF-8');
-    }
-
-    return $value;
-}
-
-function contact_has_header_injection($value)
-{
-    return preg_match('/[\r\n]/', $value) === 1;
-}
-
-function contact_tokens_match($knownToken, $receivedToken)
-{
-    if (function_exists('hash_equals')) {
-        return hash_equals($knownToken, $receivedToken);
-    }
-
-    if (strlen($knownToken) !== strlen($receivedToken)) {
-        return false;
-    }
-
-    $difference = 0;
-    $length = strlen($knownToken);
-    for ($index = 0; $index < $length; $index++) {
-        $difference |= ord($knownToken[$index]) ^ ord($receivedToken[$index]);
-    }
-
-    return $difference === 0;
-}
-
-function contact_email_escape($value)
-{
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-}
-
-function contact_email_value($value)
-{
-    return $value === ''
-        ? '<span style="color:#8A949E;">Non renseigné</span>'
-        : nl2br(contact_email_escape($value));
-}
-
-function contact_email_row($label, $value)
-{
-    return '<tr>'
-        . '<td width="34%" valign="top" style="padding:11px 14px;border-bottom:1px solid #E8ECE9;color:#5F6B76;font-size:13px;font-weight:600;">' . contact_email_escape($label) . '</td>'
-        . '<td valign="top" style="padding:11px 14px;border-bottom:1px solid #E8ECE9;color:#1F2933;font-size:14px;line-height:1.55;">' . contact_email_value($value) . '</td>'
-        . '</tr>';
 }
 
 function contact_whatsapp_url($phone)
@@ -146,142 +56,181 @@ function contact_whatsapp_url($phone)
     return 'https://wa.me/' . $digits;
 }
 
-function contact_client_ip()
-{
-    if (!empty($_SERVER['REMOTE_ADDR']) && filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
-        return (string) $_SERVER['REMOTE_ADDR'];
-    }
-
-    return '';
-}
-
 $contactRequestId = substr(sha1(uniqid('', true)), 0, 12);
+$contactIp = grinco_client_ip();
 
 if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     header('Allow: POST');
     contact_log('Requête refusée : méthode HTTP différente de POST.');
-    contact_set_flash('error', 'Cette action nécessite l’envoi du formulaire de contact.', array());
-    contact_redirect();
+    grinco_security_log('contact', 'rejected', 'invalid_method', 0, 0, '', $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
 contact_log('Requête POST reçue.');
 
 if (isset($_SERVER['CONTENT_LENGTH']) && (int) $_SERVER['CONTENT_LENGTH'] > 30000) {
     contact_log('Validation refusée : taille de requête supérieure à 30 000 octets.');
-    contact_set_flash('error', 'Votre message est trop volumineux. Veuillez en réduire la longueur.', array());
-    contact_redirect();
+    grinco_security_log('contact', 'rejected', 'request_too_large', 0, 0, '', $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
 $_SESSION['contact_old'] = contact_capture_old_input();
+$rawEmailForLog = trim(grinco_post_value('email'));
 
-$receivedToken = contact_post_value('csrf_token');
-$knownToken = isset($_SESSION['contact_csrf_token']) ? (string) $_SESSION['contact_csrf_token'] : '';
-
-if ($receivedToken === '' || $knownToken === '' || !contact_tokens_match($knownToken, $receivedToken)) {
+if (!grinco_validate_csrf_token('contact', grinco_post_value('csrf_token'))) {
     contact_log('Validation refusée : jeton CSRF absent ou invalide.');
-    contact_set_flash('error', 'Votre session a expiré. Veuillez recharger la page et recommencer.', array());
-    contact_redirect();
+    grinco_security_log('contact', 'rejected', 'invalid_csrf', 100, 0, $rawEmailForLog, $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Votre session a expiré. Veuillez recharger la page et recommencer.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
-if (contact_post_value('website') !== '') {
+if (grinco_post_value('website') !== '' || grinco_post_value('company_url') !== '') {
     contact_log('Soumission neutralisée : honeypot rempli.');
+    grinco_security_log('contact', 'rejected', 'honeypot', 100, 0, $rawEmailForLog, $contactRequestId);
     unset($_SESSION['contact_old']);
-    $_SESSION['contact_csrf_token'] = function_exists('random_bytes')
-        ? bin2hex(random_bytes(32))
-        : bin2hex(openssl_random_pseudo_bytes(32));
-    contact_set_flash('success', 'Votre message a été envoyé avec succès. Notre équipe vous répondra dans les meilleurs délais.', array());
-    contact_redirect();
+    grinco_set_form_flash('contact', 'success', 'Votre message a bien été envoyé. Notre équipe vous répondra dans les meilleurs délais.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
-$formStartedAt = isset($_SESSION['contact_form_started_at']) ? (int) $_SESSION['contact_form_started_at'] : 0;
-if ($formStartedAt <= 0 || (time() - $formStartedAt) < 3) {
-    contact_log('Validation refusée : délai minimal de trois secondes non respecté.');
-    contact_set_flash('error', 'Veuillez attendre quelques secondes avant d’envoyer le formulaire.', array());
-    contact_redirect();
+$timingResult = grinco_validate_form_timing('contact', grinco_post_value('form_started_at'));
+if (!$timingResult['valid']) {
+    contact_log('Validation refusée : contrôle de durée (' . $timingResult['reason'] . ').');
+    grinco_security_log('contact', 'rejected', $timingResult['reason'], 5, 0, $rawEmailForLog, $contactRequestId);
+    $timingMessage = $timingResult['reason'] === 'submitted_too_fast'
+        ? 'Veuillez attendre quelques secondes avant d’envoyer le formulaire.'
+        : 'Votre session a expiré. Veuillez recharger la page et recommencer.';
+    grinco_set_form_flash('contact', 'error', $timingMessage, array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
-$now = time();
-$attempts = isset($_SESSION['contact_submission_attempts']) && is_array($_SESSION['contact_submission_attempts'])
-    ? $_SESSION['contact_submission_attempts']
-    : array();
-$recentAttempts = array();
-
-foreach ($attempts as $attemptTimestamp) {
-    if (is_numeric($attemptTimestamp) && (int) $attemptTimestamp > ($now - 900)) {
-        $recentAttempts[] = (int) $attemptTimestamp;
-    }
+if (!grinco_validate_request_origin()) {
+    contact_log('Validation refusée : origine étrangère au site.');
+    grinco_security_log('contact', 'rejected', 'foreign_origin', 100, 0, $rawEmailForLog, $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
-if (count($recentAttempts) >= 5) {
-    contact_log('Validation refusée : limitation de cinq tentatives sur quinze minutes atteinte.');
-    contact_set_flash('error', 'Vous avez effectué trop de tentatives. Veuillez réessayer dans quinze minutes.', array());
-    contact_redirect();
+$rateResult = grinco_check_rate_limit('contact', $contactIp, $rawEmailForLog);
+if (!$rateResult['allowed']) {
+    contact_log('Validation refusée : ' . $rateResult['reason'] . '.');
+    grinco_security_log('contact', 'rejected', $rateResult['reason'], 0, 0, $rawEmailForLog, $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Plusieurs tentatives ont été détectées. Veuillez patienter avant de soumettre une nouvelle demande.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
+}
+
+$turnstileResult = grinco_validate_turnstile(grinco_post_value('cf-turnstile-response'), $contactIp);
+if (!$turnstileResult['valid']) {
+    contact_log('Validation refusée : Turnstile ' . $turnstileResult['reason'] . '.');
+    grinco_security_log('contact', 'rejected', 'turnstile_' . $turnstileResult['reason'], 100, 0, $rawEmailForLog, $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'La vérification de sécurité a échoué. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
 $errors = array();
-$rawName = contact_post_value('full_name');
-$rawEmail = contact_post_value('email');
-$rawSubject = contact_post_value('subject');
+$fieldErrors = array();
+$rawName = grinco_post_value('full_name');
+$rawEmail = grinco_post_value('email');
+$rawPhone = grinco_post_value('phone');
+$rawSubject = grinco_post_value('subject');
+$rawMessage = grinco_post_value('message');
 
-if (
-    contact_has_header_injection($rawName)
-    || contact_has_header_injection($rawEmail)
-    || contact_has_header_injection($rawSubject)
-) {
-    $errors[] = 'Certaines informations contiennent des caractères non autorisés.';
-}
+$nameResult = grinco_validate_name($rawName, 2, 100);
+$emailResult = grinco_validate_email_address($rawEmail);
+$phoneResult = grinco_validate_phone($rawPhone, false);
+contact_add_field_errors($errors, $fieldErrors, 'full_name', $nameResult['errors']);
+contact_add_field_errors($errors, $fieldErrors, 'email', $emailResult['errors']);
+contact_add_field_errors($errors, $fieldErrors, 'phone', $phoneResult['errors']);
 
 $data = array(
-    'full_name' => contact_clean_field('full_name', 'Le nom complet', 120, false, $errors),
-    'email' => trim($rawEmail),
-    'phone' => contact_clean_field('phone', 'Le numéro de téléphone', 40, false, $errors),
-    'subject' => contact_clean_field('subject', 'Le sujet', 160, false, $errors),
-    'message' => contact_clean_field('message', 'Le message', 5000, true, $errors)
+    'full_name' => $nameResult['value'],
+    'email' => $emailResult['value'],
+    'phone' => $phoneResult['value'],
+    'subject' => grinco_normalize_text(strip_tags($rawSubject), false),
+    'message' => grinco_normalize_text(strip_tags($rawMessage), true)
 );
 
-if ($data['full_name'] === '' || mb_strlen($data['full_name'], 'UTF-8') < 2) {
-    $errors[] = 'Veuillez indiquer votre nom complet.';
-}
-if ($data['email'] === '') {
-    $errors[] = 'L’adresse e-mail est obligatoire.';
-} elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-    $errors[] = 'L’adresse e-mail n’est pas valide.';
-}
-if ($data['subject'] === '' || mb_strlen($data['subject'], 'UTF-8') < 3) {
-    $errors[] = 'Veuillez indiquer le sujet de votre message.';
-}
-if ($data['message'] === '' || mb_strlen($data['message'], 'UTF-8') < 10) {
-    $errors[] = 'Veuillez saisir un message d’au moins dix caractères.';
-}
-
-$phonePattern = '/^[0-9+().\/\s-]+$/';
 if (
-    $data['phone'] !== ''
-    && (
-        !preg_match($phonePattern, $data['phone'])
-        || strlen(preg_replace('/\D+/', '', $data['phone'])) < 6
-        || strlen(preg_replace('/\D+/', '', $data['phone'])) > 15
-    )
+    grinco_detect_header_injection($rawName)
+    || grinco_detect_header_injection($rawEmail)
+    || grinco_detect_header_injection($rawSubject)
 ) {
-    $errors[] = 'Le numéro de téléphone n’est pas valide.';
+    $errors[] = 'Certaines informations contiennent des caractères non autorisés.';
+    $fieldErrors['subject'] = 'Le sujet contient des caractères non autorisés.';
+}
+if (
+    grinco_has_forbidden_control_characters($rawSubject, false)
+    || grinco_utf8_length($data['subject']) < 3
+    || grinco_utf8_length($data['subject']) > 150
+) {
+    $fieldErrors['subject'] = 'Veuillez indiquer un sujet valide de 3 à 150 caractères.';
+    $errors[] = $fieldErrors['subject'];
+}
+if (
+    grinco_has_forbidden_control_characters($rawMessage, true)
+    || grinco_utf8_length($data['message']) < 10
+    || grinco_utf8_length($data['message']) > 3000
+) {
+    $fieldErrors['message'] = 'Veuillez saisir un message de 10 à 3 000 caractères.';
+    $errors[] = $fieldErrors['message'];
 }
 
 $_SESSION['contact_old'] = $data;
 
+$spamResult = grinco_analyze_spam(
+    'contact',
+    array(
+        'name' => $rawName,
+        'subject' => $rawSubject,
+        'message' => $rawMessage
+    ),
+    $rawSubject
+);
+$emailSuspicionScore = grinco_email_suspicion_score($data['email']);
+if ($emailSuspicionScore > 0) {
+    $spamResult['score'] += $emailSuspicionScore;
+    if ($spamResult['reason'] === 'accepted') {
+        $spamResult['reason'] = 'suspicious_email_domain';
+    }
+}
+if (grinco_request_user_agent_hash() === '') {
+    $spamResult['score'] += 2;
+    if ($spamResult['reason'] === 'accepted') {
+        $spamResult['reason'] = 'empty_user_agent';
+    }
+    $securityConfig = grinco_form_security_config();
+    $spamResult['rejected'] = $spamResult['score'] >= (int) $securityConfig['spam']['reject_score'];
+}
+$securityConfig = grinco_form_security_config();
+$spamResult['rejected'] = $spamResult['score'] >= (int) $securityConfig['spam']['reject_score'];
+
+if ($spamResult['rejected']) {
+    contact_log('Validation refusée par l’analyse anti-spam.');
+    grinco_security_log('contact', 'rejected', $spamResult['reason'], $spamResult['score'], $spamResult['url_count'], $data['email'], $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
+}
+
 if (!empty($errors)) {
     contact_log('Validation refusée : un ou plusieurs champs sont invalides.');
-    contact_set_flash(
-        'error',
-        'Veuillez compléter correctement les champs signalés.',
-        array_values(array_unique($errors))
-    );
-    contact_redirect();
+    grinco_security_log('contact', 'rejected', 'validation_error', $spamResult['score'], $spamResult['url_count'], $data['email'], $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Certaines informations sont invalides. Veuillez vérifier les champs indiqués.', $errors, $fieldErrors);
+    grinco_finalize_form_attempt('contact');
+    grinco_redirect_form('contact');
 }
 
 contact_log('Validation réussie.');
-$recentAttempts[] = $now;
-$_SESSION['contact_submission_attempts'] = $recentAttempts;
 
 try {
     $autoloadPath = __DIR__ . '/vendor/autoload.php';
@@ -327,27 +276,27 @@ try {
 
     date_default_timezone_set('Africa/Lubumbashi');
     $receivedAt = date('d/m/Y à H:i');
-    $clientIp = contact_client_ip();
-    $safeSubject = preg_replace('/[\r\n]+/', ' ', $data['subject']);
-    $mailSubject = 'Nouveau message depuis le site GRINCO RDC – ' . $safeSubject;
+    $clientIp = grinco_mask_ip($contactIp);
+    $mailSubject = 'Contact GRINCO — Nouveau message de ' . $data['full_name'];
     $whatsappUrl = contact_whatsapp_url($data['phone']);
 
     $visitorRows = ''
-        . contact_email_row('Nom complet', $data['full_name'])
-        . contact_email_row('E-mail', $data['email'])
-        . contact_email_row('Téléphone', $data['phone'])
-        . contact_email_row('Sujet', $data['subject'])
-        . contact_email_row('Date et heure', $receivedAt)
-        . contact_email_row('Adresse IP', $clientIp);
+        . grinco_email_row('Nom complet', $data['full_name'])
+        . grinco_email_row('E-mail', $data['email'])
+        . grinco_email_row('Téléphone', $data['phone'])
+        . grinco_email_row('Sujet', $data['subject'])
+        . grinco_email_row('Type de formulaire', 'Contact')
+        . grinco_email_row('Date et heure', $receivedAt)
+        . grinco_email_row('Adresse IP', $clientIp);
 
     $whatsappButton = '';
     if ($whatsappUrl !== '') {
         $whatsappButton = '<td style="padding-left:10px;">'
-            . '<a href="' . contact_email_escape($whatsappUrl) . '" style="display:inline-block;padding:13px 18px;border:1px solid #3A884C;border-radius:6px;color:#3A884C;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;">Contacter par WhatsApp</a>'
+            . '<a href="' . grinco_email_escape($whatsappUrl) . '" style="display:inline-block;padding:13px 18px;border:1px solid #3A884C;border-radius:6px;color:#3A884C;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;">Contacter par WhatsApp</a>'
             . '</td>';
     }
 
-    $emailBody = '<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Nouveau message GRINCO RDC</title></head>'
+    $emailBody = '<!doctype html><html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Nouveau message GRINCO RDC</title></head>'
         . '<body style="margin:0;padding:0;background:#F4F6F5;font-family:Arial,Helvetica,sans-serif;color:#1F2933;">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#F4F6F5;padding:30px 10px;"><tr><td align="center">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:700px;background:#FFFFFF;border-top:6px solid #3A884C;border-bottom:6px solid #CF2E2E;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,0.08);">'
@@ -360,9 +309,9 @@ try {
         . '<tr><td style="padding:0 30px 26px;"><div style="margin-bottom:10px;color:#3A884C;font-size:12px;font-weight:700;letter-spacing:1px;">INFORMATIONS DU VISITEUR</div>'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #E8ECE9;border-radius:8px;border-collapse:separate;overflow:hidden;">' . $visitorRows . '</table></td></tr>'
         . '<tr><td style="padding:0 30px 26px;"><div style="margin-bottom:10px;color:#3A884C;font-size:12px;font-weight:700;letter-spacing:1px;">MESSAGE</div>'
-        . '<div style="padding:18px;border:1px solid #E8ECE9;border-radius:8px;color:#1F2933;font-size:14px;line-height:1.7;">' . nl2br(contact_email_escape($data['message'])) . '</div></td></tr>'
+        . '<div style="padding:18px;border:1px solid #E8ECE9;border-radius:8px;color:#1F2933;font-size:14px;line-height:1.7;">' . nl2br(grinco_email_escape($data['message'])) . '</div></td></tr>'
         . '<tr><td style="padding:0 30px 30px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr>'
-        . '<td><a href="mailto:' . contact_email_escape($data['email']) . '" style="display:inline-block;padding:14px 20px;border-radius:6px;background:#3A884C;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none;">Répondre par e-mail</a></td>'
+        . '<td><a href="mailto:' . grinco_email_escape($data['email']) . '" style="display:inline-block;padding:14px 20px;border-radius:6px;background:#3A884C;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none;">Répondre par e-mail</a></td>'
         . $whatsappButton
         . '</tr></table></td></tr>'
         . '<tr><td style="padding:22px 30px;background:#F7F9F8;border-top:1px solid #E8ECE9;color:#5F6B76;font-size:12px;line-height:1.6;text-align:center;">'
@@ -408,22 +357,14 @@ try {
     $mail->send();
     contact_log('Envoi SMTP réussi.');
 
-    unset($_SESSION['contact_old'], $_SESSION['contact_form_started_at']);
-    $_SESSION['contact_csrf_token'] = function_exists('random_bytes')
-        ? bin2hex(random_bytes(32))
-        : bin2hex(openssl_random_pseudo_bytes(32));
-    contact_set_flash(
-        'success',
-        'Votre message a été envoyé avec succès. Notre équipe vous répondra dans les meilleurs délais.',
-        array()
-    );
+    grinco_security_log('contact', 'accepted', 'smtp_sent', $spamResult['score'], $spamResult['url_count'], $data['email'], $contactRequestId);
+    unset($_SESSION['contact_old']);
+    grinco_set_form_flash('contact', 'success', 'Votre message a bien été envoyé. Notre équipe vous répondra dans les meilleurs délais.', array(), array());
 } catch (\Exception $exception) {
     contact_log('Échec du traitement ou de l’envoi SMTP : ' . $exception->getMessage());
-    contact_set_flash(
-        'error',
-        'Votre message n’a pas pu être envoyé. Veuillez réessayer ou nous contacter directement à info@grincodrc.com.',
-        array()
-    );
+    grinco_security_log('contact', 'error', 'smtp_error', $spamResult['score'], $spamResult['url_count'], $data['email'], $contactRequestId);
+    grinco_set_form_flash('contact', 'error', 'Votre message n’a pas pu être envoyé. Veuillez réessayer ou nous contacter directement à info@grincodrc.com.', array(), array());
 }
 
-contact_redirect();
+grinco_finalize_form_attempt('contact');
+grinco_redirect_form('contact');

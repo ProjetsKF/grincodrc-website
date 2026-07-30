@@ -15,7 +15,7 @@ include __DIR__ . '/includes/header.php';
     <div class="container position-relative">
       <nav class="partner-breadcrumbs" aria-label="Fil d’Ariane" data-aos="fade-down">
         <ol>
-          <li><a href="index.php">Accueil</a></li>
+          <li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li>
           <li aria-current="page">Partenariat</li>
         </ol>
       </nav>
@@ -27,8 +27,8 @@ include __DIR__ . '/includes/header.php';
             <h1>GRINCO RDC et <span>ZW GROUP</span></h1>
             <p>GRINCO RDC collabore avec ZW GROUP afin de faciliter l’accès aux véhicules industriels, semi-remorques, engins et solutions de transport pour les clients de la République démocratique du Congo.</p>
             <div class="partner-hero-actions">
-              <a href="catalogue.php" class="partner-btn partner-btn-primary">Découvrir les solutions <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-              <a href="demande-devis.php" class="partner-btn partner-btn-outline">Demander un devis</a>
+              <a href="<?php echo grinco_url_html('/catalogue'); ?>" class="partner-btn partner-btn-primary">Découvrir les solutions <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a href="<?php echo grinco_url_html('/demande-devis'); ?>" class="partner-btn partner-btn-outline">Demander un devis</a>
             </div>
           </div>
         </div>
@@ -89,7 +89,7 @@ include __DIR__ . '/includes/header.php';
             <div class="partner-card-icon"><i class="bi bi-fuel-pump" aria-hidden="true"></i></div>
             <h3>Transport de carburant</h3>
             <p>Solutions de transport en citerne adaptées aux opérations énergétiques, industrielles et logistiques.</p>
-            <a href="catalogue.php">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a href="<?php echo grinco_url_html('/catalogue'); ?>">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </article>
         </div>
 
@@ -98,7 +98,7 @@ include __DIR__ . '/includes/header.php';
             <div class="partner-card-icon"><i class="bi bi-droplet" aria-hidden="true"></i></div>
             <h3>Assainissement et services municipaux</h3>
             <p>Véhicules et équipements configurables pour l’eau, l’entretien urbain et les services collectifs.</p>
-            <a href="catalogue.php">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a href="<?php echo grinco_url_html('/catalogue'); ?>">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </article>
         </div>
 
@@ -107,7 +107,7 @@ include __DIR__ . '/includes/header.php';
             <div class="partner-card-icon"><i class="bi bi-cone-striped" aria-hidden="true"></i></div>
             <h3>Transport pour la construction</h3>
             <p>Solutions pour l’acheminement de matériaux, d’équipements et de charges liés aux chantiers.</p>
-            <a href="catalogue.php">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a href="<?php echo grinco_url_html('/catalogue'); ?>">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </article>
         </div>
 
@@ -116,7 +116,7 @@ include __DIR__ . '/includes/header.php';
             <div class="partner-card-icon"><i class="bi bi-gem" aria-hidden="true"></i></div>
             <h3>Transport minier</h3>
             <p>Véhicules lourds et configurations étudiées pour les contraintes des sites et opérations minières.</p>
-            <a href="catalogue.php">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a href="<?php echo grinco_url_html('/catalogue'); ?>">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </article>
         </div>
 
@@ -125,7 +125,7 @@ include __DIR__ . '/includes/header.php';
             <div class="partner-card-icon"><i class="bi bi-snow" aria-hidden="true"></i></div>
             <h3>Logistique et chaîne du froid</h3>
             <p>Solutions de transport pour les marchandises, les produits sensibles et les flux logistiques spécialisés.</p>
-            <a href="catalogue.php">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a href="<?php echo grinco_url_html('/catalogue'); ?>">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </article>
         </div>
 
@@ -134,7 +134,7 @@ include __DIR__ . '/includes/header.php';
             <div class="partner-card-icon"><i class="bi bi-tools" aria-hidden="true"></i></div>
             <h3>Assistance et dépannage</h3>
             <p>Configurations et équipements d’intervention pour soutenir les opérations sur route et sur site.</p>
-            <a href="catalogue.php">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a href="<?php echo grinco_url_html('/catalogue'); ?>">Voir les solutions <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </article>
         </div>
       </div>
@@ -344,8 +344,8 @@ include __DIR__ . '/includes/header.php';
           <p>Présentez votre besoin à GRINCO RDC afin de recevoir une proposition technique et financière adaptée.</p>
         </div>
         <div class="partner-cta-actions">
-          <a href="demande-devis.php" class="partner-btn partner-btn-light">Demander un devis</a>
-          <a href="contact.php" class="partner-btn partner-btn-outline-light">Contacter notre équipe</a>
+          <a href="<?php echo grinco_url_html('/demande-devis'); ?>" class="partner-btn partner-btn-light">Demander un devis</a>
+          <a href="<?php echo grinco_url_html('/contact'); ?>" class="partner-btn partner-btn-outline-light">Contacter notre équipe</a>
         </div>
       </div>
     </div>

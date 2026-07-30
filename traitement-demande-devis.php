@@ -1,46 +1,12 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-function quote_redirect()
-{
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_write_close();
-    }
-
-    header('Location: demande-devis.php');
-    exit;
-}
-
-function quote_set_flash($type, $message, $errors)
-{
-    unset($_SESSION['quote_success'], $_SESSION['quote_error'], $_SESSION['quote_validation_errors']);
-
-    if ($type === 'success') {
-        $_SESSION['quote_success'] = $message;
-    } else {
-        $_SESSION['quote_error'] = $message;
-    }
-
-    if (is_array($errors) && !empty($errors)) {
-        $_SESSION['quote_validation_errors'] = array_values($errors);
-    }
-}
+require_once __DIR__ . '/includes/form-security.php';
+grinco_apply_form_security_headers();
+grinco_start_secure_session();
 
 function quote_log($message)
 {
     global $quoteRequestId;
     error_log('[GRINCO quote form][' . $quoteRequestId . '] ' . $message);
-}
-
-function quote_post_value($name)
-{
-    if (!isset($_POST[$name]) || !is_scalar($_POST[$name])) {
-        return '';
-    }
-
-    return (string) $_POST[$name];
 }
 
 function quote_capture_old_input()
@@ -68,156 +34,167 @@ function quote_capture_old_input()
     $oldInput = array();
 
     foreach ($fieldNames as $fieldName) {
-        $value = quote_post_value($fieldName);
+        $value = grinco_post_value($fieldName);
+        $multiline = in_array($fieldName, array('intended_use', 'technical_requirements', 'additional_message'), true);
         $oldInput[$fieldName] = $fieldName === 'consent'
             ? ($value === '1' ? '1' : '')
-            : trim(strip_tags($value));
+            : grinco_normalize_text(strip_tags($value), $multiline);
     }
 
     return $oldInput;
 }
 
-function quote_clean_field($name, $label, $maxLength, $multiline, &$errors)
+function quote_clean_field($name, $label, $maxLength, $multiline, &$errors, &$fieldErrors)
 {
-    $rawValue = quote_post_value($name);
-    $value = strip_tags($rawValue);
-    $value = preg_replace('/\r\n?/', "\n", $value);
+    $rawValue = grinco_post_value($name);
+    $value = grinco_normalize_text(strip_tags($rawValue), $multiline);
 
-    if ($multiline) {
-        $value = preg_replace('/[ \t]+/u', ' ', $value);
-        $value = preg_replace('/\n{3,}/u', "\n\n", $value);
-    } else {
-        $value = preg_replace('/\s+/u', ' ', $value);
+    if (grinco_utf8_length($value) > $maxLength) {
+        $message = $label . ' dépasse la longueur autorisée.';
+        $errors[] = $message;
+        $fieldErrors[$name] = $message;
+        return grinco_utf8_substr($value, 0, $maxLength);
     }
-
-    $value = trim($value);
-
-    if (mb_strlen($value, 'UTF-8') > $maxLength) {
-        $errors[] = $label . ' dépasse la longueur autorisée.';
-        return mb_substr($value, 0, $maxLength, 'UTF-8');
+    if (grinco_has_forbidden_control_characters($rawValue, $multiline)) {
+        $message = $label . ' contient des caractères non autorisés.';
+        $errors[] = $message;
+        $fieldErrors[$name] = $message;
     }
 
     return $value;
 }
 
-function quote_has_header_injection($value)
+function quote_add_field_errors(&$errors, &$fieldErrors, $field, $newErrors)
 {
-    return preg_match('/[\r\n]/', $value) === 1;
-}
-
-function quote_email_escape($value)
-{
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-}
-
-function quote_email_value($value)
-{
-    if ($value === '') {
-        return '<span style="color:#8A949E;">Non renseigné</span>';
+    foreach ($newErrors as $newError) {
+        $errors[] = $newError;
+        if (empty($fieldErrors[$field])) {
+            $fieldErrors[$field] = $newError;
+        }
     }
-
-    return nl2br(quote_email_escape($value));
-}
-
-function quote_email_row($label, $value)
-{
-    return '<tr>'
-        . '<td width="34%" valign="top" style="padding:11px 14px;border-bottom:1px solid #E8ECE9;color:#5F6B76;font-size:13px;font-weight:600;">' . quote_email_escape($label) . '</td>'
-        . '<td valign="top" style="padding:11px 14px;border-bottom:1px solid #E8ECE9;color:#1F2933;font-size:14px;line-height:1.55;">' . quote_email_value($value) . '</td>'
-        . '</tr>';
 }
 
 $quoteRequestId = substr(sha1(uniqid('', true)), 0, 12);
+$quoteIp = grinco_client_ip();
 
 if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     header('Allow: POST');
     quote_log('Requête refusée : méthode HTTP différente de POST.');
-    quote_set_flash('error', 'Cette action nécessite l’envoi du formulaire de demande de devis.', array());
-    quote_redirect();
+    grinco_security_log('quote', 'rejected', 'invalid_method', 0, 0, '', $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
 quote_log('Requête POST reçue.');
 
 if (isset($_SERVER['CONTENT_LENGTH']) && (int) $_SERVER['CONTENT_LENGTH'] > 50000) {
     quote_log('Validation refusée : taille de requête supérieure à 50 000 octets.');
-    quote_set_flash('error', 'La demande contient trop de données. Veuillez réduire la longueur de votre message.', array());
-    quote_redirect();
+    grinco_security_log('quote', 'rejected', 'request_too_large', 0, 0, '', $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
 $_SESSION['quote_old'] = quote_capture_old_input();
+$rawEmailForLog = trim(grinco_post_value('email'));
 
-$csrfToken = quote_post_value('csrf_token');
-$sessionToken = isset($_SESSION['quote_csrf_token']) ? (string) $_SESSION['quote_csrf_token'] : '';
-
-if ($csrfToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $csrfToken)) {
+if (!grinco_validate_csrf_token('quote', grinco_post_value('csrf_token'))) {
     quote_log('Validation refusée : jeton CSRF absent ou invalide.');
-    quote_set_flash('error', 'Votre session a expiré. Veuillez recharger la page et recommencer.', array());
-    quote_redirect();
+    grinco_security_log('quote', 'rejected', 'invalid_csrf', 100, 0, $rawEmailForLog, $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Votre session a expiré. Veuillez recharger la page et recommencer.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
-if (quote_post_value('website') !== '') {
+if (grinco_post_value('website') !== '' || grinco_post_value('company_url') !== '') {
     quote_log('Soumission neutralisée : honeypot rempli.');
+    grinco_security_log('quote', 'rejected', 'honeypot', 100, 0, $rawEmailForLog, $quoteRequestId);
     unset($_SESSION['quote_old']);
-    $_SESSION['quote_csrf_token'] = function_exists('random_bytes')
-        ? bin2hex(random_bytes(32))
-        : bin2hex(openssl_random_pseudo_bytes(32));
-    quote_set_flash('success', 'Votre demande a été envoyée avec succès. Notre équipe vous contactera après analyse de votre besoin.', array());
-    quote_redirect();
+    grinco_set_form_flash('quote', 'success', 'Votre demande de devis a bien été transmise. L’équipe GRINCO vous contactera après analyse de votre besoin.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
-$formStartedAt = isset($_SESSION['quote_form_started_at']) ? (int) $_SESSION['quote_form_started_at'] : 0;
-if ($formStartedAt <= 0 || (time() - $formStartedAt) < 3) {
-    quote_log('Validation refusée : délai minimal de trois secondes non respecté.');
-    quote_set_flash('error', 'Veuillez attendre quelques secondes avant d’envoyer le formulaire.', array());
-    quote_redirect();
+$timingResult = grinco_validate_form_timing('quote', grinco_post_value('form_started_at'));
+if (!$timingResult['valid']) {
+    quote_log('Validation refusée : contrôle de durée (' . $timingResult['reason'] . ').');
+    grinco_security_log('quote', 'rejected', $timingResult['reason'], 5, 0, $rawEmailForLog, $quoteRequestId);
+    $timingMessage = $timingResult['reason'] === 'submitted_too_fast'
+        ? 'Veuillez attendre quelques secondes avant d’envoyer le formulaire.'
+        : 'Votre session a expiré. Veuillez recharger la page et recommencer.';
+    grinco_set_form_flash('quote', 'error', $timingMessage, array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
-$now = time();
-$attempts = isset($_SESSION['quote_submission_attempts']) && is_array($_SESSION['quote_submission_attempts'])
-    ? $_SESSION['quote_submission_attempts']
-    : array();
-$recentAttempts = array();
-
-foreach ($attempts as $attemptTimestamp) {
-    if (is_numeric($attemptTimestamp) && (int) $attemptTimestamp > ($now - 900)) {
-        $recentAttempts[] = (int) $attemptTimestamp;
-    }
+if (!grinco_validate_request_origin()) {
+    quote_log('Validation refusée : origine étrangère au site.');
+    grinco_security_log('quote', 'rejected', 'foreign_origin', 100, 0, $rawEmailForLog, $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
-if (count($recentAttempts) >= 3) {
-    quote_log('Validation refusée : limitation de trois tentatives sur quinze minutes atteinte.');
-    quote_set_flash('error', 'Vous avez effectué trop de tentatives. Veuillez réessayer dans quinze minutes.', array());
-    quote_redirect();
+$rateResult = grinco_check_rate_limit('quote', $quoteIp, $rawEmailForLog);
+if (!$rateResult['allowed']) {
+    quote_log('Validation refusée : ' . $rateResult['reason'] . '.');
+    grinco_security_log('quote', 'rejected', $rateResult['reason'], 0, 0, $rawEmailForLog, $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Plusieurs tentatives ont été détectées. Veuillez patienter avant de soumettre une nouvelle demande.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
+}
+
+$turnstileResult = grinco_validate_turnstile(grinco_post_value('cf-turnstile-response'), $quoteIp);
+if (!$turnstileResult['valid']) {
+    quote_log('Validation refusée : Turnstile ' . $turnstileResult['reason'] . '.');
+    grinco_security_log('quote', 'rejected', 'turnstile_' . $turnstileResult['reason'], 100, 0, $rawEmailForLog, $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'La vérification de sécurité a échoué. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
 $errors = array();
+$fieldErrors = array();
 
-$rawName = quote_post_value('full_name');
-$rawEmail = quote_post_value('email');
-if (quote_has_header_injection($rawName) || quote_has_header_injection($rawEmail)) {
+$rawName = grinco_post_value('full_name');
+$rawEmail = grinco_post_value('email');
+$rawPhone = grinco_post_value('phone');
+$rawWhatsapp = grinco_post_value('whatsapp');
+if (grinco_detect_header_injection($rawName) || grinco_detect_header_injection($rawEmail)) {
     $errors[] = 'Les coordonnées fournies contiennent des caractères non autorisés.';
+    $fieldErrors['full_name'] = 'Le nom contient des caractères non autorisés.';
 }
 
+$nameResult = grinco_validate_name($rawName, 2, 100);
+$emailResult = grinco_validate_email_address($rawEmail);
+$phoneResult = grinco_validate_phone($rawPhone, true);
+$whatsappResult = grinco_validate_phone($rawWhatsapp, false);
+quote_add_field_errors($errors, $fieldErrors, 'full_name', $nameResult['errors']);
+quote_add_field_errors($errors, $fieldErrors, 'email', $emailResult['errors']);
+quote_add_field_errors($errors, $fieldErrors, 'phone', $phoneResult['errors']);
+quote_add_field_errors($errors, $fieldErrors, 'whatsapp', $whatsappResult['errors']);
+
 $data = array(
-    'full_name' => quote_clean_field('full_name', 'Le nom complet', 120, false, $errors),
-    'company' => quote_clean_field('company', 'Le nom de l’entreprise', 150, false, $errors),
-    'email' => trim($rawEmail),
-    'phone' => quote_clean_field('phone', 'Le numéro de téléphone', 40, false, $errors),
-    'whatsapp' => quote_clean_field('whatsapp', 'Le numéro WhatsApp', 40, false, $errors),
-    'city' => quote_clean_field('city', 'La ville', 100, false, $errors),
-    'province' => quote_clean_field('province', 'La province', 100, false, $errors),
-    'category' => quote_clean_field('category', 'La catégorie', 80, false, $errors),
-    'brand' => quote_clean_field('brand', 'La marque', 100, false, $errors),
-    'model' => quote_clean_field('model', 'Le modèle', 100, false, $errors),
-    'quantity' => quote_clean_field('quantity', 'La quantité', 6, false, $errors),
-    'intended_use' => quote_clean_field('intended_use', 'L’utilisation prévue', 1000, true, $errors),
-    'technical_requirements' => quote_clean_field('technical_requirements', 'Les caractéristiques techniques', 3000, true, $errors),
-    'delivery_location' => quote_clean_field('delivery_location', 'Le lieu de livraison', 200, false, $errors),
-    'desired_deadline' => quote_clean_field('desired_deadline', 'Le délai souhaité', 100, false, $errors),
-    'indicative_budget' => quote_clean_field('indicative_budget', 'Le budget indicatif', 100, false, $errors),
-    'additional_message' => quote_clean_field('additional_message', 'Le message complémentaire', 3000, true, $errors),
-    'consent' => quote_post_value('consent') === '1' ? '1' : ''
+    'full_name' => $nameResult['value'],
+    'company' => quote_clean_field('company', 'Le nom de l’entreprise', 150, false, $errors, $fieldErrors),
+    'email' => $emailResult['value'],
+    'phone' => $phoneResult['value'],
+    'whatsapp' => $whatsappResult['value'],
+    'city' => quote_clean_field('city', 'La ville', 100, false, $errors, $fieldErrors),
+    'province' => quote_clean_field('province', 'La province', 100, false, $errors, $fieldErrors),
+    'category' => quote_clean_field('category', 'La catégorie', 80, false, $errors, $fieldErrors),
+    'brand' => quote_clean_field('brand', 'La marque', 100, false, $errors, $fieldErrors),
+    'model' => quote_clean_field('model', 'Le modèle', 100, false, $errors, $fieldErrors),
+    'quantity' => quote_clean_field('quantity', 'La quantité', 4, false, $errors, $fieldErrors),
+    'intended_use' => quote_clean_field('intended_use', 'L’utilisation prévue', 1000, true, $errors, $fieldErrors),
+    'technical_requirements' => quote_clean_field('technical_requirements', 'Les caractéristiques techniques', 3000, true, $errors, $fieldErrors),
+    'delivery_location' => quote_clean_field('delivery_location', 'Le lieu de livraison', 200, false, $errors, $fieldErrors),
+    'desired_deadline' => quote_clean_field('desired_deadline', 'Le délai souhaité', 100, false, $errors, $fieldErrors),
+    'indicative_budget' => quote_clean_field('indicative_budget', 'Le budget indicatif', 100, false, $errors, $fieldErrors),
+    'additional_message' => quote_clean_field('additional_message', 'Le message complémentaire', 3000, true, $errors, $fieldErrors),
+    'consent' => grinco_post_value('consent') === '1' ? '1' : ''
 );
 
 $requiredFields = array(
@@ -232,19 +209,8 @@ $requiredFields = array(
 foreach ($requiredFields as $field => $message) {
     if ($data[$field] === '') {
         $errors[] = $message;
+        $fieldErrors[$field] = $message;
     }
-}
-
-if ($data['email'] !== '' && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-    $errors[] = 'L’adresse e-mail n’est pas valide.';
-}
-
-$phonePattern = '/^[0-9+().\/\s-]+$/';
-if ($data['phone'] !== '' && (!preg_match($phonePattern, $data['phone']) || strlen(preg_replace('/\D+/', '', $data['phone'])) < 6)) {
-    $errors[] = 'Le numéro de téléphone n’est pas valide.';
-}
-if ($data['whatsapp'] !== '' && (!preg_match($phonePattern, $data['whatsapp']) || strlen(preg_replace('/\D+/', '', $data['whatsapp'])) < 6)) {
-    $errors[] = 'Le numéro WhatsApp n’est pas valide.';
 }
 
 $allowedCategories = array(
@@ -259,29 +225,83 @@ $allowedCategories = array(
 );
 
 if ($data['category'] !== '' && !in_array($data['category'], $allowedCategories, true)) {
-    $errors[] = 'La catégorie sélectionnée n’est pas valide.';
+    $fieldErrors['category'] = 'La catégorie sélectionnée n’est pas valide.';
+    $errors[] = $fieldErrors['category'];
 }
 
-if ($data['quantity'] !== '' && (!ctype_digit($data['quantity']) || (int) $data['quantity'] < 1 || (int) $data['quantity'] > 999999)) {
-    $errors[] = 'La quantité doit être un nombre entier supérieur à zéro.';
+if ($data['quantity'] !== '' && (!ctype_digit($data['quantity']) || (int) $data['quantity'] < 1 || (int) $data['quantity'] > 1000)) {
+    $fieldErrors['quantity'] = 'La quantité doit être un entier compris entre 1 et 1 000.';
+    $errors[] = $fieldErrors['quantity'];
+}
+
+if (
+    $data['indicative_budget'] !== ''
+    && (
+        strpos($data['indicative_budget'], '-') !== false
+        || !preg_match('/^(?=.*\d)[0-9\s.,\'’A-Za-z$€CDFUSDFCFA]+$/u', $data['indicative_budget'])
+    )
+) {
+    $fieldErrors['indicative_budget'] = 'Le budget doit contenir un montant positif et, si nécessaire, une devise.';
+    $errors[] = $fieldErrors['indicative_budget'];
 }
 
 if ($data['consent'] !== '1') {
-    $errors[] = 'Vous devez accepter l’utilisation de vos informations pour le traitement de la demande.';
+    $fieldErrors['consent'] = 'Vous devez accepter l’utilisation de vos informations pour le traitement de la demande.';
+    $errors[] = $fieldErrors['consent'];
 }
 
 $_SESSION['quote_old'] = $data;
 
+$spamFields = array(
+    'name' => $rawName,
+    'company' => grinco_post_value('company'),
+    'city' => grinco_post_value('city'),
+    'province' => grinco_post_value('province'),
+    'brand' => grinco_post_value('brand'),
+    'model' => grinco_post_value('model'),
+    'intended_use' => grinco_post_value('intended_use'),
+    'technical_requirements' => grinco_post_value('technical_requirements'),
+    'delivery_location' => grinco_post_value('delivery_location'),
+    'desired_deadline' => grinco_post_value('desired_deadline'),
+    'indicative_budget' => grinco_post_value('indicative_budget'),
+    'additional_message' => grinco_post_value('additional_message')
+);
+$spamResult = grinco_analyze_spam('quote', $spamFields, '');
+$emailSuspicionScore = grinco_email_suspicion_score($data['email']);
+if ($emailSuspicionScore > 0) {
+    $spamResult['score'] += $emailSuspicionScore;
+    if ($spamResult['reason'] === 'accepted') {
+        $spamResult['reason'] = 'suspicious_email_domain';
+    }
+}
+if (grinco_request_user_agent_hash() === '') {
+    $spamResult['score'] += 2;
+    if ($spamResult['reason'] === 'accepted') {
+        $spamResult['reason'] = 'empty_user_agent';
+    }
+    $securityConfig = grinco_form_security_config();
+    $spamResult['rejected'] = $spamResult['score'] >= (int) $securityConfig['spam']['reject_score'];
+}
+$securityConfig = grinco_form_security_config();
+$spamResult['rejected'] = $spamResult['score'] >= (int) $securityConfig['spam']['reject_score'];
+
+if ($spamResult['rejected']) {
+    quote_log('Validation refusée par l’analyse anti-spam.');
+    grinco_security_log('quote', 'rejected', $spamResult['reason'], $spamResult['score'], $spamResult['url_count'], $data['email'], $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Votre demande n’a pas pu être traitée. Veuillez réessayer.', array(), array());
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
+}
+
 if (!empty($errors)) {
     quote_log('Validation refusée : un ou plusieurs champs sont invalides.');
-    quote_set_flash('error', 'Veuillez compléter tous les champs obligatoires et corriger les informations signalées.', array_values(array_unique($errors)));
-    quote_redirect();
+    grinco_security_log('quote', 'rejected', 'validation_error', $spamResult['score'], $spamResult['url_count'], $data['email'], $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Certaines informations sont invalides. Veuillez vérifier les champs indiqués.', $errors, $fieldErrors);
+    grinco_finalize_form_attempt('quote');
+    grinco_redirect_form('quote');
 }
 
 quote_log('Validation réussie.');
-
-$recentAttempts[] = $now;
-$_SESSION['quote_submission_attempts'] = $recentAttempts;
 
 try {
     $autoloadPath = __DIR__ . '/vendor/autoload.php';
@@ -332,9 +352,9 @@ try {
 
     date_default_timezone_set('Africa/Lubumbashi');
     $receivedAt = date('d/m/Y à H:i');
-    $subjectName = preg_replace('/[\r\n]+/', ' ', $data['full_name']);
-    $subjectCategory = preg_replace('/[\r\n]+/', ' ', $data['category']);
-    $subject = 'Nouvelle demande de devis GRINCO – ' . $subjectName . ' – ' . $subjectCategory;
+    $subjectIdentity = $data['company'] !== '' ? $data['company'] : $data['full_name'];
+    $subject = 'Demande de devis GRINCO — ' . $data['category'] . ' — ' . $subjectIdentity;
+    $maskedIp = grinco_mask_ip($quoteIp);
 
     $whatsappDigits = preg_replace('/\D+/', '', $data['whatsapp']);
     $whatsappUrl = strlen($whatsappDigits) >= 8 && strlen($whatsappDigits) <= 15
@@ -343,40 +363,42 @@ try {
 
     $logoHtml = '';
     if (!empty($mailConfig['logo_url']) && filter_var($mailConfig['logo_url'], FILTER_VALIDATE_URL)) {
-        $logoHtml = '<img src="' . quote_email_escape($mailConfig['logo_url']) . '" width="150" alt="GRINCO RDC" style="display:block;max-width:150px;height:auto;border:0;">';
+        $logoHtml = '<img src="' . grinco_email_escape($mailConfig['logo_url']) . '" width="150" alt="GRINCO RDC" style="display:block;max-width:150px;height:auto;border:0;">';
     } else {
         $logoHtml = '<div style="color:#3A884C;font-family:Arial,sans-serif;font-size:25px;font-weight:700;letter-spacing:-0.5px;">GRINCO RDC</div>';
     }
 
     $clientRows = ''
-        . quote_email_row('Nom complet', $data['full_name'])
-        . quote_email_row('Entreprise', $data['company'])
-        . quote_email_row('E-mail', $data['email'])
-        . quote_email_row('Téléphone', $data['phone'])
-        . quote_email_row('WhatsApp', $data['whatsapp'])
-        . quote_email_row('Ville', $data['city'])
-        . quote_email_row('Province', $data['province']);
+        . grinco_email_row('Nom complet', $data['full_name'])
+        . grinco_email_row('Entreprise', $data['company'])
+        . grinco_email_row('E-mail', $data['email'])
+        . grinco_email_row('Téléphone', $data['phone'])
+        . grinco_email_row('WhatsApp', $data['whatsapp'])
+        . grinco_email_row('Ville', $data['city'])
+        . grinco_email_row('Province', $data['province'])
+        . grinco_email_row('Type de formulaire', 'Demande de devis')
+        . grinco_email_row('Adresse IP', $maskedIp);
 
     $requestRows = ''
-        . quote_email_row('Catégorie', $data['category'])
-        . quote_email_row('Marque', $data['brand'])
-        . quote_email_row('Modèle', $data['model'])
-        . quote_email_row('Quantité', $data['quantity'])
-        . quote_email_row('Usage prévu', $data['intended_use'])
-        . quote_email_row('Caractéristiques techniques', $data['technical_requirements'])
-        . quote_email_row('Lieu de livraison', $data['delivery_location'])
-        . quote_email_row('Délai souhaité', $data['desired_deadline'])
-        . quote_email_row('Budget indicatif', $data['indicative_budget'])
-        . quote_email_row('Message complémentaire', $data['additional_message']);
+        . grinco_email_row('Catégorie', $data['category'])
+        . grinco_email_row('Marque', $data['brand'])
+        . grinco_email_row('Modèle', $data['model'])
+        . grinco_email_row('Quantité', $data['quantity'])
+        . grinco_email_row('Usage prévu', $data['intended_use'])
+        . grinco_email_row('Caractéristiques techniques', $data['technical_requirements'])
+        . grinco_email_row('Lieu de livraison', $data['delivery_location'])
+        . grinco_email_row('Délai souhaité', $data['desired_deadline'])
+        . grinco_email_row('Budget indicatif', $data['indicative_budget'])
+        . grinco_email_row('Message complémentaire', $data['additional_message']);
 
     $whatsappButton = '';
     if ($whatsappUrl !== '') {
         $whatsappButton = '<td style="padding:0 0 0 10px;">'
-            . '<a href="' . quote_email_escape($whatsappUrl) . '" style="display:inline-block;padding:13px 18px;border:1px solid #3A884C;border-radius:6px;color:#3A884C;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;">Contacter sur WhatsApp</a>'
+            . '<a href="' . grinco_email_escape($whatsappUrl) . '" style="display:inline-block;padding:13px 18px;border:1px solid #3A884C;border-radius:6px;color:#3A884C;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;">Contacter sur WhatsApp</a>'
             . '</td>';
     }
 
-    $emailBody = '<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Nouvelle demande de devis</title></head>'
+    $emailBody = '<!doctype html><html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Nouvelle demande de devis</title></head>'
         . '<body style="margin:0;padding:0;background:#F4F6F5;font-family:Arial,Helvetica,sans-serif;color:#1F2933;">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#F4F6F5;padding:30px 10px;"><tr><td align="center">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:700px;background:#FFFFFF;border-top:6px solid #3A884C;border-bottom:6px solid #CF2E2E;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,0.08);">'
@@ -386,7 +408,7 @@ try {
         . '<td align="right" valign="middle"><span style="display:inline-block;padding:8px 13px;border-radius:20px;background:#FCEAEA;color:#CF2E2E;font-size:12px;font-weight:700;text-transform:uppercase;">À traiter</span></td>'
         . '</tr></table></td></tr>'
         . '<tr><td style="padding:0 30px 24px;">'
-        . '<div style="padding:16px 18px;border-radius:8px;background:#EAF4EC;color:#1F2933;font-size:14px;"><strong>Demande reçue le ' . quote_email_escape($receivedAt) . '</strong></div>'
+        . '<div style="padding:16px 18px;border-radius:8px;background:#EAF4EC;color:#1F2933;font-size:14px;"><strong>Demande reçue le ' . grinco_email_escape($receivedAt) . '</strong></div>'
         . '</td></tr>'
         . '<tr><td style="padding:0 30px 26px;">'
         . '<div style="margin-bottom:10px;color:#3A884C;font-size:12px;font-weight:700;letter-spacing:1px;">INFORMATIONS DU CLIENT</div>'
@@ -398,7 +420,7 @@ try {
         . '</td></tr>'
         . '<tr><td style="padding:0 30px 30px;">'
         . '<table role="presentation" cellpadding="0" cellspacing="0"><tr>'
-        . '<td><a href="mailto:' . quote_email_escape($data['email']) . '" style="display:inline-block;padding:14px 20px;border-radius:6px;background:#3A884C;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none;">Répondre au client</a></td>'
+        . '<td><a href="mailto:' . grinco_email_escape($data['email']) . '" style="display:inline-block;padding:14px 20px;border-radius:6px;background:#3A884C;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none;">Répondre au client</a></td>'
         . $whatsappButton
         . '</tr></table></td></tr>'
         . '<tr><td style="padding:22px 30px;background:#F7F9F8;border-top:1px solid #E8ECE9;color:#5F6B76;font-size:12px;line-height:1.6;text-align:center;">'
@@ -409,6 +431,8 @@ try {
 
     $altBody = "GRINCO RDC - Nouvelle demande de devis\n"
         . "Demande reçue le " . $receivedAt . "\n\n"
+        . "Type de formulaire : Demande de devis\n"
+        . "Adresse IP : " . $maskedIp . "\n\n"
         . "INFORMATIONS DU CLIENT\n"
         . "Nom complet : " . $data['full_name'] . "\n"
         . "Entreprise : " . $data['company'] . "\n"
@@ -458,14 +482,14 @@ try {
     $mail->send();
     quote_log('Envoi SMTP réussi.');
 
-    unset($_SESSION['quote_old'], $_SESSION['quote_form_started_at']);
-    $_SESSION['quote_csrf_token'] = function_exists('random_bytes')
-        ? bin2hex(random_bytes(32))
-        : bin2hex(openssl_random_pseudo_bytes(32));
-    quote_set_flash('success', 'Votre demande a été envoyée avec succès. Notre équipe vous contactera après analyse de votre besoin.', array());
+    grinco_security_log('quote', 'accepted', 'smtp_sent', $spamResult['score'], $spamResult['url_count'], $data['email'], $quoteRequestId);
+    unset($_SESSION['quote_old']);
+    grinco_set_form_flash('quote', 'success', 'Votre demande de devis a bien été transmise. L’équipe GRINCO vous contactera après analyse de votre besoin.', array(), array());
 } catch (Exception $exception) {
     quote_log('Échec du traitement ou de l’envoi SMTP : ' . $exception->getMessage());
-    quote_set_flash('error', 'Votre demande n’a pas pu être envoyée. Veuillez réessayer ou contacter GRINCO RDC directement à info@grincodrc.com.', array());
+    grinco_security_log('quote', 'error', 'smtp_error', $spamResult['score'], $spamResult['url_count'], $data['email'], $quoteRequestId);
+    grinco_set_form_flash('quote', 'error', 'Votre demande n’a pas pu être envoyée. Veuillez réessayer ou contacter GRINCO RDC directement à info@grincodrc.com.', array(), array());
 }
 
-quote_redirect();
+grinco_finalize_form_attempt('quote');
+grinco_redirect_form('quote');

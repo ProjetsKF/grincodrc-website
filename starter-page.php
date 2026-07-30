@@ -11,7 +11,7 @@ include __DIR__ . '/includes/header.php';
     <div class="container d-lg-flex justify-content-between align-items-center">
       <h1 class="mb-2 mb-lg-0">Page de base</h1>
       <nav class="breadcrumbs" aria-label="Fil d’Ariane">
-        <ol><li><a href="index.php">Accueil</a></li><li class="current">Page de base</li></ol>
+        <ol><li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li><li class="current">Page de base</li></ol>
       </nav>
     </div>
   </div>

@@ -168,8 +168,8 @@ include __DIR__ . '/includes/header.php';
       <h1 class="mb-2 mb-lg-0"><?php echo $service ? htmlspecialchars($service['title'], ENT_QUOTES, 'UTF-8') : 'Service indisponible'; ?></h1>
       <nav class="breadcrumbs" aria-label="Fil d’Ariane">
         <ol>
-          <li><a href="index.php">Accueil</a></li>
-          <li><a href="services.php">Services</a></li>
+          <li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li>
+          <li><a href="<?php echo grinco_url_html('/services'); ?>">Services</a></li>
           <li class="current"><?php echo $service ? htmlspecialchars($service['title'], ENT_QUOTES, 'UTF-8') : 'Indisponible'; ?></li>
         </ol>
       </nav>
@@ -183,7 +183,7 @@ include __DIR__ . '/includes/header.php';
           <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
           <h2>Le service demandé n’est pas disponible.</h2>
           <p>Consultez la liste des activités proposées par GRINCO RDC.</p>
-          <a href="services.php" class="btn btn-primary">Voir tous les services</a>
+          <a href="<?php echo grinco_url_html('/services'); ?>" class="btn btn-primary">Voir tous les services</a>
         </div>
       </div>
     </section>
@@ -202,7 +202,7 @@ include __DIR__ . '/includes/header.php';
                   <h2><?php echo htmlspecialchars($service['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
                   <p><?php echo htmlspecialchars($service['intro'], ENT_QUOTES, 'UTF-8'); ?></p>
                   <div class="cta-button">
-                    <a href="demande-devis.php" class="btn-get-started">Demander un devis</a>
+                    <a href="<?php echo grinco_url_html('/demande-devis'); ?>" class="btn-get-started">Demander un devis</a>
                   </div>
                 </div>
               </div>
@@ -275,7 +275,7 @@ include __DIR__ . '/includes/header.php';
                   <h3>Parlons de votre besoin</h3>
                   <p><?php echo htmlspecialchars($service['cta'], ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
-                <a href="demande-devis.php" class="btn btn-light">Demander un devis</a>
+                <a href="<?php echo grinco_url_html('/demande-devis'); ?>" class="btn btn-light">Demander un devis</a>
               </div>
             </div>
           </div>

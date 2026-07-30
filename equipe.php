@@ -76,8 +76,8 @@ include __DIR__ . '/includes/header.php';
       <h1 class="mb-2 mb-lg-0">Notre équipe</h1>
       <nav class="breadcrumbs" aria-label="Fil d’Ariane">
         <ol>
-          <li><a href="index.php">Accueil</a></li>
-          <li><a href="a-propos.php">Entreprise</a></li>
+          <li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li>
+          <li><a href="<?php echo grinco_url_html('/a-propos'); ?>">Entreprise</a></li>
           <li class="current">Notre équipe</li>
         </ol>
       </nav>
@@ -159,7 +159,7 @@ include __DIR__ . '/includes/header.php';
           <h2>Échangez avec l’équipe GRINCO RDC</h2>
           <p>Présentez-nous votre besoin en véhicules, équipements, pièces ou services techniques.</p>
         </div>
-        <a href="contact.php" class="btn btn-light">Nous contacter</a>
+        <a href="<?php echo grinco_url_html('/contact'); ?>" class="btn btn-light">Nous contacter</a>
       </div>
     </div>
   </section>

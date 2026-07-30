@@ -1,20 +1,20 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/includes/form-security.php';
+grinco_apply_form_security_headers();
+grinco_start_secure_session();
 
-if (empty($_SESSION['contact_csrf_token'])) {
-    $_SESSION['contact_csrf_token'] = function_exists('random_bytes')
-        ? bin2hex(random_bytes(32))
-        : bin2hex(openssl_random_pseudo_bytes(32));
-}
-
-$_SESSION['contact_form_started_at'] = time();
+$contactCsrfToken = grinco_csrf_token('contact');
+$contactFormStartedAt = grinco_mark_form_opened('contact');
+$contactTurnstileEnabled = grinco_turnstile_is_enabled();
+$contactTurnstileSiteKey = grinco_turnstile_site_key();
 
 $contactSuccess = isset($_SESSION['contact_success']) ? (string) $_SESSION['contact_success'] : '';
 $contactError = isset($_SESSION['contact_error']) ? (string) $_SESSION['contact_error'] : '';
 $contactValidationErrors = isset($_SESSION['contact_validation_errors']) && is_array($_SESSION['contact_validation_errors'])
     ? $_SESSION['contact_validation_errors']
+    : array();
+$contactFieldErrors = isset($_SESSION['contact_field_errors']) && is_array($_SESSION['contact_field_errors'])
+    ? $_SESSION['contact_field_errors']
     : array();
 $contactOld = isset($_SESSION['contact_old']) && is_array($_SESSION['contact_old'])
     ? $_SESSION['contact_old']
@@ -24,6 +24,7 @@ unset(
     $_SESSION['contact_success'],
     $_SESSION['contact_error'],
     $_SESSION['contact_validation_errors'],
+    $_SESSION['contact_field_errors'],
     $_SESSION['contact_old']
 );
 
@@ -32,6 +33,22 @@ function contact_old_value($contactOld, $field)
     return isset($contactOld[$field]) && is_scalar($contactOld[$field])
         ? htmlspecialchars((string) $contactOld[$field], ENT_QUOTES, 'UTF-8')
         : '';
+}
+
+function contact_invalid_attribute($contactFieldErrors, $field)
+{
+    return !empty($contactFieldErrors[$field]) ? ' aria-invalid="true"' : '';
+}
+
+function contact_field_error($contactFieldErrors, $field)
+{
+    if (empty($contactFieldErrors[$field])) {
+        return '';
+    }
+
+    return '<div class="form-security-field-error">'
+        . htmlspecialchars((string) $contactFieldErrors[$field], ENT_QUOTES, 'UTF-8')
+        . '</div>';
 }
 
 $pageTitle = 'Contact';
@@ -46,7 +63,7 @@ include __DIR__ . '/includes/header.php';
       <h1 class="mb-2 mb-lg-0">Contact</h1>
       <nav class="breadcrumbs" aria-label="Fil d’Ariane">
         <ol>
-          <li><a href="index.php">Accueil</a></li>
+          <li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li>
           <li class="current">Contact</li>
         </ol>
       </nav>
@@ -145,40 +162,54 @@ include __DIR__ . '/includes/header.php';
               <?php endif; ?>
             </div>
 
-            <form action="traitement-contact.php" method="POST" class="contact-visual-form">
-              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['contact_csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+            <form action="<?php echo grinco_url_html('/traitement-contact'); ?>" method="POST" accept-charset="UTF-8" class="contact-visual-form">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($contactCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+              <input type="hidden" name="form_started_at" value="<?php echo (int) $contactFormStartedAt; ?>">
 
               <div class="contact-honeypot" aria-hidden="true">
                 <label for="contact-website">Votre site internet</label>
                 <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off">
+                <label for="contact-company-url">Adresse du site de votre entreprise</label>
+                <input type="text" id="contact-company-url" name="company_url" tabindex="-1" autocomplete="off">
               </div>
 
               <div class="row gy-4">
                 <div class="col-md-6">
                   <label for="contact-name" class="form-label">Nom complet <span aria-hidden="true">*</span></label>
-                  <input type="text" id="contact-name" name="full_name" class="form-control" value="<?php echo contact_old_value($contactOld, 'full_name'); ?>" maxlength="120" autocomplete="name" required>
+                  <input type="text" id="contact-name" name="full_name" class="form-control" value="<?php echo contact_old_value($contactOld, 'full_name'); ?>" maxlength="100" autocomplete="name" required<?php echo contact_invalid_attribute($contactFieldErrors, 'full_name'); ?>>
+                  <?php echo contact_field_error($contactFieldErrors, 'full_name'); ?>
                 </div>
 
                 <div class="col-md-6">
                   <label for="contact-email" class="form-label">Adresse e-mail <span aria-hidden="true">*</span></label>
-                  <input type="email" id="contact-email" name="email" class="form-control" value="<?php echo contact_old_value($contactOld, 'email'); ?>" maxlength="254" autocomplete="email" required>
+                  <input type="email" id="contact-email" name="email" class="form-control" value="<?php echo contact_old_value($contactOld, 'email'); ?>" maxlength="190" autocomplete="email" required<?php echo contact_invalid_attribute($contactFieldErrors, 'email'); ?>>
+                  <?php echo contact_field_error($contactFieldErrors, 'email'); ?>
                 </div>
 
                 <div class="col-md-6">
                   <label for="contact-phone" class="form-label">Téléphone</label>
-                  <input type="tel" id="contact-phone" name="phone" class="form-control" value="<?php echo contact_old_value($contactOld, 'phone'); ?>" maxlength="40" autocomplete="tel" inputmode="tel">
+                  <input type="tel" id="contact-phone" name="phone" class="form-control" value="<?php echo contact_old_value($contactOld, 'phone'); ?>" maxlength="25" autocomplete="tel" inputmode="tel"<?php echo contact_invalid_attribute($contactFieldErrors, 'phone'); ?>>
+                  <?php echo contact_field_error($contactFieldErrors, 'phone'); ?>
                 </div>
 
                 <div class="col-md-6">
                   <label for="contact-subject" class="form-label">Objet <span aria-hidden="true">*</span></label>
-                  <input type="text" id="contact-subject" name="subject" class="form-control" value="<?php echo contact_old_value($contactOld, 'subject'); ?>" maxlength="160" required>
+                  <input type="text" id="contact-subject" name="subject" class="form-control" value="<?php echo contact_old_value($contactOld, 'subject'); ?>" maxlength="150" required<?php echo contact_invalid_attribute($contactFieldErrors, 'subject'); ?>>
+                  <?php echo contact_field_error($contactFieldErrors, 'subject'); ?>
                 </div>
 
                 <div class="col-12">
                   <label for="contact-message" class="form-label">Message <span aria-hidden="true">*</span></label>
-                  <textarea id="contact-message" name="message" class="form-control" rows="6" maxlength="5000" required><?php echo contact_old_value($contactOld, 'message'); ?></textarea>
+                  <textarea id="contact-message" name="message" class="form-control" rows="6" maxlength="3000" required<?php echo contact_invalid_attribute($contactFieldErrors, 'message'); ?>><?php echo contact_old_value($contactOld, 'message'); ?></textarea>
+                  <?php echo contact_field_error($contactFieldErrors, 'message'); ?>
                 </div>
               </div>
+
+              <?php if ($contactTurnstileEnabled): ?>
+                <div class="form-security-turnstile">
+                  <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($contactTurnstileSiteKey, ENT_QUOTES, 'UTF-8'); ?>"></div>
+                </div>
+              <?php endif; ?>
 
               <div class="form-submit">
                 <button type="submit">Envoyer le message</button>
@@ -198,5 +229,8 @@ include __DIR__ . '/includes/header.php';
     </div>
   </section>
 </main>
+<?php if ($contactTurnstileEnabled): ?>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
 <?php include __DIR__ . '/includes/scripts.php'; ?>

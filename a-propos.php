@@ -6,7 +6,7 @@ include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/header.php';
 ?>
 <main class="main">
-  <div class="page-title light-background"><div class="container d-lg-flex justify-content-between align-items-center"><h1 class="mb-2 mb-lg-0">À propos</h1><nav class="breadcrumbs" aria-label="Fil d’Ariane"><ol><li><a href="index.php">Accueil</a></li><li class="current">À propos</li></ol></nav></div></div>
+  <div class="page-title light-background"><div class="container d-lg-flex justify-content-between align-items-center"><h1 class="mb-2 mb-lg-0">À propos</h1><nav class="breadcrumbs" aria-label="Fil d’Ariane"><ol><li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li><li class="current">À propos</li></ol></nav></div></div>
 
   <section id="about" class="about section">
     <div class="container" data-aos="fade-up">

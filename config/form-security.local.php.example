@@ -1,0 +1,13 @@
+<?php
+
+return array(
+    'turnstile' => array(
+        'enabled' => true,
+        'site_key' => '',
+        'secret_key' => ''
+    ),
+    'storage' => array(
+        // Facultatif : chemin absolu hors du dossier public.
+        'path' => ''
+    )
+);

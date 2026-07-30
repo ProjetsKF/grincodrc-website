@@ -1,5 +1,6 @@
 # Configuration locale
 config/mail.php
+config/form-security.local.php
 
 # Logs
 *.log
@@ -12,6 +13,13 @@ tmp/
 # Environnement
 .env
 .env.local
+!.env.example
+
+# Sécurité des formulaires et fichiers reçus
+form-security-data/
+uploads/
+*.tmp
+*.bak
 
 # Dossiers IDE
 .vscode/

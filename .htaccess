@@ -1,0 +1,35 @@
+# Index par défaut du site.
+DirectoryIndex index.php
+
+# Empêche la négociation automatique de noms de fichiers d’entrer en conflit
+# avec les routes propres gérées par mod_rewrite.
+Options -MultiViews
+
+RewriteEngine On
+
+# Redirections canoniques des anciennes URL demandées directement.
+# THE_REQUEST reste inchangé lors d’une réécriture interne et évite ainsi
+# toute boucle de redirection.
+RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$
+RewriteCond %{THE_REQUEST} \s+(/(?:[^?\s]+/)*)index\.php(?:[?\s]) [NC]
+RewriteRule ^index\.php$ %1 [R=301,L,NE]
+
+RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$
+RewriteCond %{THE_REQUEST} \s+(/(?:[^?\s]+/)*)login\.php(?:[?\s]) [NC]
+RewriteRule ^login\.php$ %1connexion [R=301,L,NE]
+
+RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$
+RewriteCond %{THE_REQUEST} \s+(/(?:[^?\s]+/)*)([A-Za-z0-9-]+)\.php(?:[?\s]) [NC]
+RewriteRule ^([A-Za-z0-9-]+)\.php$ %1%2 [R=301,L,NE]
+
+# Les fichiers et dossiers physiques conservent leur fonctionnement normal.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [END]
+
+# Route publique dédiée à la page de connexion.
+RewriteRule ^connexion$ login.php [END,QSA]
+
+# Route générique vers un fichier PHP existant à la racine.
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([A-Za-z0-9-]+)$ $1.php [END,QSA]

@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__) . '/config/app.php';
+
 $pageTitle = isset($pageTitle) ? $pageTitle : 'GRINCO RDC';
 $pageDescription = isset($pageDescription) ? $pageDescription : 'GRINCO RDC, spécialiste des véhicules, engins lourds, pièces de rechange et services d’ingénierie.';
 $currentPage = isset($currentPage) ? $currentPage : '';
@@ -8,7 +10,7 @@ $bodyClass = isset($bodyClass) ? $bodyClass : 'inner-page';
 <html lang="fr">
 
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?> | GRINCO RDC</title>
   <meta name="description" content="<?php echo htmlspecialchars($pageDescription, ENT_QUOTES, 'UTF-8'); ?>">

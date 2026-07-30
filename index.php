@@ -22,8 +22,8 @@ include __DIR__ . '/includes/header.php';
             <h1>Des solutions fiables pour <span class="highlight">faire avancer vos projets</span></h1>
             <p class="hero-description">GRINCO RDC accompagne les entreprises et les particuliers dans l’acquisition de véhicules, d’engins lourds et de pièces de rechange, en partenariat avec ZW GROUP.</p>
             <div class="hero-actions">
-              <a href="catalogue.php" class="btn-hero-primary">Explorer le catalogue</a>
-              <a href="demande-devis.php" class="btn-hero-secondary"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Demander un devis</a>
+              <a href="<?php echo grinco_url_html('/catalogue'); ?>" class="btn-hero-primary">Explorer le catalogue</a>
+              <a href="<?php echo grinco_url_html('/demande-devis'); ?>" class="btn-hero-secondary"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Demander un devis</a>
             </div>
           </div>
         </div>
@@ -131,7 +131,7 @@ include __DIR__ . '/includes/header.php';
               </div>
             </div>
 
-            <a href="a-propos.php" class="btn btn-discover">Découvrir GRINCO</a>
+            <a href="<?php echo grinco_url_html('/a-propos'); ?>" class="btn btn-discover">Découvrir GRINCO</a>
           </div>
         </div>
 
@@ -221,12 +221,12 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div class="container">
       <div class="row g-4">
-        <div class="col-md-6 col-lg-4" data-aos="fade-up"><div class="service-item"><div class="service-icon"><i class="bi bi-truck"></i></div><h3>Camions</h3><p>Solutions de transport professionnel adaptées aux opérations exigeantes.</p><a href="camions.php" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
-        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100"><div class="service-item"><div class="service-icon"><i class="bi bi-box-seam"></i></div><h3>Semi-remorques</h3><p>Équipements destinés au transport de charges et de marchandises.</p><a href="semi-remorques.php" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
-        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200"><div class="service-item"><div class="service-icon"><i class="bi bi-gear-wide-connected"></i></div><h3>Engins lourds</h3><p>Engins destinés aux chantiers, aux mines et aux travaux d’infrastructure.</p><a href="engins-lourds.php" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
-        <div class="col-md-6 col-lg-4" data-aos="fade-up"><div class="service-item"><div class="service-icon"><i class="bi bi-car-front"></i></div><h3>Véhicules particuliers</h3><p>Véhicules pour les déplacements professionnels et privés.</p><a href="vehicules-particuliers.php" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
-        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100"><div class="service-item"><div class="service-icon"><i class="bi bi-tools"></i></div><h3>Pièces de rechange</h3><p>Pièces et composants pour l’entretien de vos équipements.</p><a href="pieces-de-rechange.php" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
-        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200"><div class="service-item"><div class="service-icon"><i class="bi bi-diagram-3"></i></div><h3>Ingénierie</h3><p>Accompagnement technique et solutions adaptées aux projets.</p><a href="services.php" class="read-more">Découvrir les services <i class="bi bi-arrow-right"></i></a></div></div>
+        <div class="col-md-6 col-lg-4" data-aos="fade-up"><div class="service-item"><div class="service-icon"><i class="bi bi-truck"></i></div><h3>Camions</h3><p>Solutions de transport professionnel adaptées aux opérations exigeantes.</p><a href="<?php echo grinco_url_html('/camions'); ?>" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
+        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100"><div class="service-item"><div class="service-icon"><i class="bi bi-box-seam"></i></div><h3>Semi-remorques</h3><p>Équipements destinés au transport de charges et de marchandises.</p><a href="<?php echo grinco_url_html('/semi-remorques'); ?>" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
+        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200"><div class="service-item"><div class="service-icon"><i class="bi bi-gear-wide-connected"></i></div><h3>Engins lourds</h3><p>Engins destinés aux chantiers, aux mines et aux travaux d’infrastructure.</p><a href="<?php echo grinco_url_html('/engins-lourds'); ?>" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
+        <div class="col-md-6 col-lg-4" data-aos="fade-up"><div class="service-item"><div class="service-icon"><i class="bi bi-car-front"></i></div><h3>Véhicules particuliers</h3><p>Véhicules pour les déplacements professionnels et privés.</p><a href="<?php echo grinco_url_html('/vehicules-particuliers'); ?>" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
+        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100"><div class="service-item"><div class="service-icon"><i class="bi bi-tools"></i></div><h3>Pièces de rechange</h3><p>Pièces et composants pour l’entretien de vos équipements.</p><a href="<?php echo grinco_url_html('/pieces-de-rechange'); ?>" class="read-more">Voir la catégorie <i class="bi bi-arrow-right"></i></a></div></div>
+        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200"><div class="service-item"><div class="service-icon"><i class="bi bi-diagram-3"></i></div><h3>Ingénierie</h3><p>Accompagnement technique et solutions adaptées aux projets.</p><a href="<?php echo grinco_url_html('/services'); ?>" class="read-more">Découvrir les services <i class="bi bi-arrow-right"></i></a></div></div>
       </div>
     </div>
   </section>
@@ -242,7 +242,7 @@ include __DIR__ . '/includes/header.php';
         <div class="col-lg-6">
           <h3>Une proposition adaptée à votre besoin</h3>
           <p>Notre équipe conseille le client dans le choix des véhicules et équipements, analyse les caractéristiques techniques, prépare une cotation personnalisée et accompagne l’importation, le transport, la commande et la livraison.</p>
-          <a href="catalogue.php" class="btn btn-primary">Consulter le catalogue</a>
+          <a href="<?php echo grinco_url_html('/catalogue'); ?>" class="btn btn-primary">Consulter le catalogue</a>
         </div>
       </div>
     </div>
@@ -261,7 +261,7 @@ include __DIR__ . '/includes/header.php';
         <div class="col-md-6 col-lg-3"><div class="step-card"><div class="step-number">03</div><h3>Validation et préparation</h3><p>Le client valide les spécifications et les conditions, puis le fabricant prépare ou configure l’équipement.</p></div></div>
         <div class="col-md-6 col-lg-3"><div class="step-card"><div class="step-number">04</div><h3>Expédition et livraison</h3><p>L’équipement est expédié depuis la Chine et GRINCO accompagne le client jusqu’à la livraison et au suivi convenu.</p></div></div>
       </div>
-      <div class="text-center mt-4"><a href="comment-commander.php" class="btn btn-primary">Voir le processus complet</a></div>
+      <div class="text-center mt-4"><a href="<?php echo grinco_url_html('/comment-commander'); ?>" class="btn btn-primary">Voir le processus complet</a></div>
     </div>
   </section>
 
@@ -269,7 +269,7 @@ include __DIR__ . '/includes/header.php';
     <div class="container" data-aos="zoom-in">
       <div class="row align-items-center">
         <div class="col-lg-8"><h2>Parlons de votre prochain projet</h2><p>Transmettez votre besoin à l’équipe GRINCO RDC pour recevoir une proposition technique et financière adaptée.</p></div>
-        <div class="col-lg-4 text-lg-end"><a href="demande-devis.php" class="btn-primary">Demander un devis</a></div>
+        <div class="col-lg-4 text-lg-end"><a href="<?php echo grinco_url_html('/demande-devis'); ?>" class="btn-primary">Demander un devis</a></div>
       </div>
     </div>
   </section>

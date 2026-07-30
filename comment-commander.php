@@ -6,7 +6,7 @@ include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/header.php';
 ?>
 <main class="main">
-  <div class="page-title light-background"><div class="container d-lg-flex justify-content-between align-items-center"><h1 class="mb-2 mb-lg-0">Comment commander</h1><nav class="breadcrumbs" aria-label="Fil d’Ariane"><ol><li><a href="index.php">Accueil</a></li><li class="current">Comment commander</li></ol></nav></div></div>
+  <div class="page-title light-background"><div class="container d-lg-flex justify-content-between align-items-center"><h1 class="mb-2 mb-lg-0">Comment commander</h1><nav class="breadcrumbs" aria-label="Fil d’Ariane"><ol><li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li><li class="current">Comment commander</li></ol></nav></div></div>
   <section id="how-we-work" class="how-we-work section">
     <div class="container section-title" data-aos="fade-up"><h2>Notre processus d’achat</h2><p>GRINCO accompagne le client depuis la demande de devis jusqu’à la livraison et au suivi convenu.</p></div>
     <div class="container"><div class="row g-4">

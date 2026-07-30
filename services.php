@@ -87,7 +87,7 @@ include __DIR__ . '/includes/header.php';
       <h1 class="mb-2 mb-lg-0">Services</h1>
       <nav class="breadcrumbs" aria-label="Fil d’Ariane">
         <ol>
-          <li><a href="index.php">Accueil</a></li>
+          <li><a href="<?php echo grinco_url_html('/'); ?>">Accueil</a></li>
           <li class="current">Services</li>
         </ol>
       </nav>
@@ -105,7 +105,7 @@ include __DIR__ . '/includes/header.php';
         <?php foreach ($services as $index => $service) { ?>
           <div class="col-12 col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="<?php echo ($index % 3) * 100; ?>">
             <article class="service-item service-activity-card">
-              <a href="service-details.php?service=<?php echo htmlspecialchars($service['slug'], ENT_QUOTES, 'UTF-8'); ?>" class="service-activity-image" aria-label="Découvrir le service <?php echo htmlspecialchars($service['title'], ENT_QUOTES, 'UTF-8'); ?>">
+              <a href="<?php echo grinco_url_html('/service-details'); ?>?service=<?php echo htmlspecialchars($service['slug'], ENT_QUOTES, 'UTF-8'); ?>" class="service-activity-image" aria-label="Découvrir le service <?php echo htmlspecialchars($service['title'], ENT_QUOTES, 'UTF-8'); ?>">
                 <img src="<?php echo htmlspecialchars($service['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($service['alt'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy">
               </a>
               <div class="service-activity-body">
@@ -116,7 +116,7 @@ include __DIR__ . '/includes/header.php';
                     <li><i class="bi bi-check-circle" aria-hidden="true"></i><?php echo htmlspecialchars($point, ENT_QUOTES, 'UTF-8'); ?></li>
                   <?php } ?>
                 </ul>
-                <a href="service-details.php?service=<?php echo htmlspecialchars($service['slug'], ENT_QUOTES, 'UTF-8'); ?>" class="read-more">
+                <a href="<?php echo grinco_url_html('/service-details'); ?>?service=<?php echo htmlspecialchars($service['slug'], ENT_QUOTES, 'UTF-8'); ?>" class="read-more">
                   En savoir plus <i class="bi bi-arrow-right" aria-hidden="true"></i>
                 </a>
               </div>
