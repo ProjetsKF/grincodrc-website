@@ -14,6 +14,11 @@ return array(
         'hour' => array('window' => 3600, 'maximum' => 5),
         'day' => array('window' => 86400, 'maximum' => 10)
     ),
+    'admin_login_rate_limits' => array(
+        'minute' => array('window' => 60, 'maximum' => 5),
+        'quarter_hour' => array('window' => 900, 'maximum' => 15),
+        'day' => array('window' => 86400, 'maximum' => 50)
+    ),
     'spam' => array(
         'reject_score' => 5,
         'maximum_urls' => array(

@@ -1,10 +1,20 @@
 <?php
+require_once __DIR__ . '/config/app.php';
+
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('index', 'bootstrap-loaded');
+}
+
 $pageTitle = 'Accueil';
 $pageDescription = 'GRINCO RDC propose des camions, semi-remorques, engins lourds, véhicules particuliers, pièces de rechange et services d’ingénierie.';
 $currentPage = 'accueil';
 $bodyClass = 'index-page';
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/header.php';
+
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('index', 'main-start');
+}
 ?>
 
 <main class="main">
@@ -137,12 +147,12 @@ include __DIR__ . '/includes/header.php';
 
         <div class="col-lg-6" data-aos="fade-left" data-aos-delay="200">
           <div class="about-image-grid">
-            <img src="assets/img/about/about-15.png" class="img-grid-main" alt="Équipe GRINCO RDC étudiant un projet" loading="lazy">
-            <img src="assets/img/about/ingenierie.png" class="img-grid-secondary" alt="Expertise en ingénierie de GRINCO RDC" loading="lazy">
-            <img src="assets/img/about/import.png" class="img-grid-tertiary" alt="Solutions d’importation d’équipements GRINCO RDC" loading="lazy">
+            <img src="assets/img/about/carine1.jpg" class="img-grid-main" alt="Équipe GRINCO RDC étudiant un projet" loading="lazy">
+            <img src="assets/img/about/carine_bureau.jpg" class="img-grid-secondary" alt="Expertise en ingénierie de GRINCO RDC" loading="lazy">
+            <img src="assets/img/about/expli.jpg" class="img-grid-tertiary" alt="Solutions d’importation d’équipements GRINCO RDC" loading="lazy">
             <div class="experience-badge partner-badge" aria-label="Partenaire officiel ZW GROUP">
-              <span class="partner-label">Partenaire officiel</span>
-              <span class="partner-name">ZW GROUP</span>
+              <span class="partner-label">Expériences</span>
+              <span class="partner-name">4 ans</span>
             </div>
           </div>
         </div>
@@ -238,7 +248,7 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div class="container">
       <div class="row align-items-center gy-4">
-        <div class="col-lg-6"><img src="assets/img/services/services-12.png" class="img-fluid rounded" alt="Sélection de produits et services GRINCO RDC" loading="lazy"></div>
+        <div class="col-lg-6"><img src="assets/img/about/bureau.png" class="img-fluid rounded" alt="Sélection de produits et services GRINCO RDC" loading="lazy"></div>
         <div class="col-lg-6">
           <h3>Une proposition adaptée à votre besoin</h3>
           <p>Notre équipe conseille le client dans le choix des véhicules et équipements, analyse les caractéristiques techniques, prépare une cotation personnalisée et accompagne l’importation, le transport, la commande et la livraison.</p>
@@ -277,6 +287,14 @@ include __DIR__ . '/includes/header.php';
 </main>
 
 <?php
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('index', 'main-end');
+}
+
 include __DIR__ . '/includes/footer.php';
 include __DIR__ . '/includes/scripts.php';
+
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('index', 'render-complete');
+}
 ?>

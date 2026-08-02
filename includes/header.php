@@ -7,6 +7,6 @@
 
     <?php include __DIR__ . '/menu.php'; ?>
 
-    <a class="btn-getstarted" href="<?php echo grinco_url_html('/demande-devis'); ?>">Demander un devis</a>
+    <a class="btn-getstarted" href="<?php echo grinco_url_html('/panier-devis'); ?>">Demander un devis</a>
   </div>
 </header>

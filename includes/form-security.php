@@ -43,7 +43,18 @@ function grinco_start_secure_session()
     ini_set('session.cookie_httponly', '1');
 
     $isSecure = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
-    session_set_cookie_params(0, '/', '', $isSecure, true);
+    if (PHP_VERSION_ID >= 70300) {
+        session_set_cookie_params(array(
+            'lifetime' => 0,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ));
+    } else {
+        session_set_cookie_params(0, '/', '', $isSecure, true);
+    }
     session_start();
 }
 
@@ -514,6 +525,9 @@ function grinco_rate_file($formType, $kind, $identifier)
 function grinco_rate_limit_consume_identifier($formType, $kind, $identifier)
 {
     $config = grinco_form_security_config();
+    $rateLimits = $formType === 'admin_login' && !empty($config['admin_login_rate_limits'])
+        ? $config['admin_login_rate_limits']
+        : $config['rate_limits'];
     $path = grinco_rate_file($formType, $kind, $identifier);
     $handle = @fopen($path, 'c+');
     if ($handle === false) {
@@ -535,7 +549,7 @@ function grinco_rate_limit_consume_identifier($formType, $kind, $identifier)
 
     $allowed = true;
     $reason = '';
-    foreach ($config['rate_limits'] as $limitName => $limit) {
+    foreach ($rateLimits as $limitName => $limit) {
         $count = 0;
         foreach ($validTimestamps as $timestamp) {
             if ($timestamp > ($now - (int) $limit['window'])) {

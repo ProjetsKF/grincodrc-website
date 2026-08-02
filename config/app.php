@@ -32,3 +32,21 @@ if (!function_exists('grinco_url_html')) {
         return htmlspecialchars(grinco_url($path), ENT_QUOTES, 'UTF-8');
     }
 }
+
+/*
+ * Diagnostic de rendu désactivé par défaut.
+ * Pour l'activer temporairement en production, définir
+ * GRINCO_RENDER_DIAGNOSTICS=1 dans l'environnement PHP.
+ */
+if (!function_exists('grinco_render_log')) {
+    function grinco_render_log($page, $stage)
+    {
+        if (getenv('GRINCO_RENDER_DIAGNOSTICS') !== '1') {
+            return;
+        }
+
+        $page = preg_replace('/[^a-z0-9._-]/i', '-', (string) $page);
+        $stage = preg_replace('/[^a-z0-9._-]/i', '-', (string) $stage);
+        error_log('[GRINCO production page] page=' . $page . ' stage=' . $stage);
+    }
+}

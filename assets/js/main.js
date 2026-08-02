@@ -9,12 +9,18 @@
 (function() {
   "use strict";
 
+  const rootElement = document.documentElement;
+  const aosAvailable = typeof window.AOS !== 'undefined' && typeof window.AOS.init === 'function';
+
+  rootElement.classList.add(aosAvailable ? 'aos-ready' : 'aos-fallback');
+
   /**
    * Apply .scrolled class to the body as the page is scrolled down
    */
   function toggleScrolled() {
     const selectBody = document.querySelector('body');
     const selectHeader = document.querySelector('#header');
+    if (!selectBody || !selectHeader) return;
     if (!selectHeader.classList.contains('scroll-up-sticky') && !selectHeader.classList.contains('sticky-top') && !selectHeader.classList.contains('fixed-top')) return;
     window.scrollY > 100 ? selectBody.classList.add('scrolled') : selectBody.classList.remove('scrolled');
   }
@@ -70,13 +76,15 @@
       window.scrollY > 100 ? scrollTop.classList.add('active') : scrollTop.classList.remove('active');
     }
   }
-  scrollTop.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
+  if (scrollTop) {
+    scrollTop.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
-  });
+  }
 
   window.addEventListener('load', toggleScrollTop);
   document.addEventListener('scroll', toggleScrollTop);
@@ -85,7 +93,9 @@
    * Animation on scroll function and init
    */
   function aosInit() {
-    AOS.init({
+    if (!aosAvailable) return;
+
+    window.AOS.init({
       duration: 600,
       easing: 'ease-in-out',
       once: true,

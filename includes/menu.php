@@ -3,6 +3,8 @@ require_once dirname(__DIR__) . '/config/app.php';
 
 $cataloguePages = array(
   'catalogue',
+  'produit',
+  'panier-devis',
   'camions',
   'semi-remorques',
   'engins-lourds',

@@ -1,4 +1,10 @@
 <?php
+require_once __DIR__ . '/config/app.php';
+
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('equipe', 'bootstrap-loaded');
+}
+
 $pageTitle = 'Notre équipe';
 $pageDescription = 'Découvrez l’équipe commerciale de GRINCO RDC et son agent de liaison entre la Chine et la République démocratique du Congo.';
 $currentPage = 'equipe';
@@ -41,7 +47,7 @@ $agents = array(
     'phone' => '+243 990 485 866',
     'whatsapp' => '+243 990 485 866',
     'location' => 'RDC Congo : Kinshasa, Lubumbashi, Kolwezi (en progrès).',
-    'image' => 'assets/img/person/vide.png',
+    'image' => 'assets/img/person/carine.png',
     'placeholder' => true
   ),
   array(
@@ -68,6 +74,10 @@ $agents = array(
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/header.php';
+
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('equipe', 'main-start');
+}
 ?>
 
 <main class="main">
@@ -165,5 +175,15 @@ include __DIR__ . '/includes/header.php';
   </section>
 </main>
 
-<?php include __DIR__ . '/includes/footer.php'; ?>
-<?php include __DIR__ . '/includes/scripts.php'; ?>
+<?php
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('equipe', 'main-end');
+}
+
+include __DIR__ . '/includes/footer.php';
+include __DIR__ . '/includes/scripts.php';
+
+if (function_exists('grinco_render_log')) {
+  grinco_render_log('equipe', 'render-complete');
+}
+?>
