@@ -248,7 +248,7 @@ if (function_exists('grinco_render_log')) {
     </div>
     <div class="container">
       <div class="row align-items-center gy-4">
-        <div class="col-lg-6"><img src="assets/img/about/bureau.png" class="img-fluid rounded" alt="Sélection de produits et services GRINCO RDC" loading="lazy"></div>
+        <div class="col-lg-6"><img src="assets/img/about/bureau.jpg" class="img-fluid rounded" alt="Sélection de produits et services GRINCO RDC" loading="lazy"></div>
         <div class="col-lg-6">
           <h3>Une proposition adaptée à votre besoin</h3>
           <p>Notre équipe conseille le client dans le choix des véhicules et équipements, analyse les caractéristiques techniques, prépare une cotation personnalisée et accompagne l’importation, le transport, la commande et la livraison.</p>

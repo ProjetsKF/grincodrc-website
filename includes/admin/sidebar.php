@@ -8,7 +8,7 @@ $adminNavigationItems = array(
     array('key' => 'media', 'label' => 'Images et documents', 'icon' => 'bi-images', 'url' => '/admin/images-documents.php', 'enabled' => true),
     array('key' => 'demandes-devis', 'label' => 'Demandes de devis', 'icon' => 'bi-file-earmark-text', 'url' => '/admin/demandes-devis.php', 'enabled' => true),
     array('key' => 'taux-change', 'label' => 'Taux de change', 'icon' => 'bi-currency-exchange', 'url' => '/admin/taux-change.php', 'enabled' => true),
-    array('key' => 'settings', 'label' => 'Paramètres', 'icon' => 'bi-gear', 'url' => '/admin/parametres.php', 'enabled' => false)
+    array('key' => 'parametres', 'label' => 'Paramètres', 'icon' => 'bi-gear', 'url' => '/admin/parametres.php', 'enabled' => true)
 );
 ?>
 

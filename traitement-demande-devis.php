@@ -13,7 +13,7 @@ function quote_request_log($requestId, $message)
 function quote_capture_input()
 {
     $old = array();
-    foreach (array('nom', 'entreprise', 'telephone', 'email', 'message') as $field) {
+    foreach (array('nom', 'entreprise', 'telephone', 'email', 'message', 'incoterm', 'port_destination', 'nom_port', 'ville_livraison', 'transport_terrestre') as $field) {
         $old[$field] = grinco_normalize_text(strip_tags(grinco_post_value($field)), $field === 'message');
     }
     $old['consent'] = grinco_post_value('consent') === '1' ? '1' : '';
@@ -36,6 +36,22 @@ function quote_clean_text($field, $label, $maximum, $multiline, &$errors, &$fiel
         $fieldErrors[$field] = $message;
     }
     return $value;
+}
+
+function quote_logistics_choice($field, $allowedValues, $defaultValue)
+{
+    $value = strtolower(trim(grinco_post_value($field)));
+    return isset($allowedValues[$value]) ? $value : $defaultValue;
+}
+
+function quote_logistics_text($field, $maximum)
+{
+    $raw = grinco_post_value($field);
+    if (grinco_has_forbidden_control_characters($raw, false)) {
+        return '';
+    }
+    $value = grinco_normalize_text(strip_tags($raw), false);
+    return grinco_utf8_length($value) > $maximum ? grinco_utf8_substr($value, 0, $maximum) : $value;
 }
 
 function quote_fail($message, $errors, $fieldErrors)
@@ -105,6 +121,34 @@ if ($email !== '' && (strlen($email) > 150 || grinco_detect_header_injection($em
     $fieldErrors['email'] = 'L’adresse e-mail n’est pas valide.';
     $errors[] = $fieldErrors['email'];
 }
+$incotermLabels = array(
+    'conseil' => 'Je souhaite être conseillé',
+    'exw' => 'EXW',
+    'fob' => 'FOB',
+    'cif' => 'CIF'
+);
+$portLabels = array(
+    'dar_es_salaam' => 'Dar es Salaam (Tanzanie)',
+    'tanga' => 'Tanga (Tanzanie)',
+    'durban' => 'Durban (Afrique du Sud)',
+    'luanda' => 'Luanda (Angola)',
+    'mombasa' => 'Mombasa (Kenya)',
+    'autre' => 'Autre'
+);
+$groundTransportLabels = array(
+    'oui' => 'Oui',
+    'non' => 'Non',
+    'a_definir' => 'À définir'
+);
+$incoterm = quote_logistics_choice('incoterm', $incotermLabels, 'conseil');
+$portDestination = quote_logistics_choice('port_destination', $portLabels, '');
+$customPort = $portDestination === 'autre' ? quote_logistics_text('nom_port', 100) : '';
+$finalCity = quote_logistics_text('ville_livraison', 100);
+$groundTransport = quote_logistics_choice('transport_terrestre', $groundTransportLabels, '');
+$portDisplay = $portDestination === '' ? 'Non renseigné' : $portLabels[$portDestination];
+if ($portDestination === 'autre' && $customPort !== '') {
+    $portDisplay .= ' — ' . $customPort;
+}
 $data = array(
     'nom' => $nameResult['value'],
     'entreprise' => quote_clean_text('entreprise', 'Le nom de l’entreprise', 150, false, $errors, $fieldErrors),
@@ -164,6 +208,10 @@ $mailRequest = array(
     'telephone' => $data['telephone'],
     'email' => $data['email'],
     'message' => $data['message'],
+    'incoterm' => $incotermLabels[$incoterm],
+    'port_destination' => $portDisplay,
+    'ville_livraison' => $finalCity === '' ? 'Non renseignée' : $finalCity,
+    'transport_terrestre' => $groundTransport === '' ? 'Non renseigné' : $groundTransportLabels[$groundTransport],
     'date_demande' => $created['date_demande']
 );
 try {

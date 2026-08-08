@@ -7,7 +7,7 @@ $services = array(
   array(
     'slug' => 'ingenierie-construction',
     'title' => 'Ingénierie et construction',
-    'image' => 'assets/img/about/ingenierie.png',
+    'image' => 'assets/img/about/ingenierie.jpg',
     'alt' => 'Équipe d’ingénierie et chantier de construction GRINCO RDC',
     'description' => 'Des solutions d’étude, de conception et de réalisation adaptées aux projets de construction.',
     'points' => array('Génie civil', 'Construction industrielle', 'Routes et topographie')
@@ -15,7 +15,7 @@ $services = array(
   array(
     'slug' => 'maintenance-industrielle',
     'title' => 'Maintenance industrielle',
-    'image' => 'assets/img/about/ChatGPT%20Image%2029%20juil.%202026%2C%2011_07_31.png',
+    'image' => 'assets/img/about/ChatGPT%20Image%2029%20juil.%202026%2C%2011_07_31.jpg',
     'alt' => 'Techniciens GRINCO RDC intervenant sur un équipement industriel',
     'description' => 'Une approche multidisciplinaire pour maintenir les équipements et systèmes techniques en état de fonctionnement.',
     'points' => array('Maintenance mécanique', 'Maintenance électrique', 'Automatisation industrielle')
@@ -23,7 +23,7 @@ $services = array(
   array(
     'slug' => 'energie-installations-electriques',
     'title' => 'Énergie et installations électriques',
-    'image' => 'assets/img/about/electricite.png',
+    'image' => 'assets/img/about/electricite.jpg',
     'alt' => 'Installation électrique et solutions énergétiques',
     'description' => 'Étude et mise en œuvre d’installations électriques industrielles, domestiques et énergétiques.',
     'points' => array('Courant fort', 'Courant faible', 'Énergies renouvelables')
@@ -31,7 +31,7 @@ $services = array(
   array(
     'slug' => 'commerce-import-export-logistique',
     'title' => 'Commerce, import-export et logistique',
-    'image' => 'assets/img/about/import.png',
+    'image' => 'assets/img/about/import.jpg',
     'alt' => 'Opérations de commerce international, importation et logistique',
     'description' => 'Un accompagnement structuré pour l’approvisionnement, l’importation, le transport et la livraison.',
     'points' => array('Import-export', 'Transport et logistique', 'Fourniture d’équipements')
@@ -39,7 +39,7 @@ $services = array(
   array(
     'slug' => 'conseil-expertise',
     'title' => 'Conseil et expertise',
-    'image' => 'assets/img/about/conseil_expertise.png',
+    'image' => 'assets/img/about/conseil_expertise.jpg',
     'alt' => 'Réunion de conseil et d’expertise technique',
     'description' => 'Des analyses et recommandations techniques pour sécuriser les décisions et optimiser les systèmes.',
     'points' => array('Études techniques', 'Gestion des risques', 'Accompagnement stratégique')
@@ -47,7 +47,7 @@ $services = array(
   array(
     'slug' => 'formation-technique',
     'title' => 'Formation technique',
-    'image' => 'assets/img/about/formation.png',
+    'image' => 'assets/img/about/formation.jpg',
     'alt' => 'Session de formation technique professionnelle',
     'description' => 'Des formations pratiques destinées au développement et au renforcement des compétences techniques.',
     'points' => array('Maintenance industrielle', 'Sécurité', 'Électricité et automatisation')
@@ -55,7 +55,7 @@ $services = array(
   array(
     'slug' => 'agro-industrie',
     'title' => 'Agro-industrie et activités agropastorales',
-    'image' => 'assets/img/about/agriculture.png',
+    'image' => 'assets/img/about/agriculture.jpg',
     'alt' => 'Activités agricoles, agropastorales et agro-industrielles',
     'description' => 'Un accompagnement des activités de production, de transformation et de valorisation des ressources.',
     'points' => array('Production', 'Transformation', 'Activités agropastorales')
@@ -63,7 +63,7 @@ $services = array(
   array(
     'slug' => 'telecommunications',
     'title' => 'Télécommunications',
-    'image' => 'assets/img/about/telecommunication.png',
+    'image' => 'assets/img/about/telecommunication.jpg',
     'alt' => 'Infrastructure de télécommunications et solutions de connectivité',
     'description' => 'Des solutions pour les réseaux, les installations techniques et la maintenance des équipements.',
     'points' => array('Réseaux', 'Téléphonie mobile', 'Solutions de connectivité')
@@ -71,7 +71,7 @@ $services = array(
   array(
     'slug' => 'evaluation-suivi-projets',
     'title' => 'Évaluation et suivi de projets',
-    'image' => 'assets/img/about/consultance.png',
+    'image' => 'assets/img/about/consultance.jpg',
     'alt' => 'Équipe GRINCO RDC étudiant et suivant un projet technique',
     'description' => 'Une démarche méthodique pour analyser, planifier, suivre et évaluer l’exécution des projets.',
     'points' => array('Étude de faisabilité', 'Suivi d’exécution', 'Évaluation des résultats')

@@ -34,6 +34,10 @@ function grinco_quote_send_notification($request, $products, $configurationOverr
     }
 
     $reference = 'DEVIS-' . str_pad((string) $request['id'], 6, '0', STR_PAD_LEFT);
+    $deliveryIncoterm = isset($request['incoterm']) && $request['incoterm'] !== '' ? $request['incoterm'] : 'Je souhaite être conseillé';
+    $deliveryPort = isset($request['port_destination']) && $request['port_destination'] !== '' ? $request['port_destination'] : 'Non renseigné';
+    $deliveryCity = isset($request['ville_livraison']) && $request['ville_livraison'] !== '' ? $request['ville_livraison'] : 'Non renseignée';
+    $deliveryGroundTransport = isset($request['transport_terrestre']) && $request['transport_terrestre'] !== '' ? $request['transport_terrestre'] : 'Non renseigné';
     $body = '<!doctype html><html lang="fr"><body style="margin:0;background:#f5f7f5;font-family:Arial,sans-serif;color:#252525;">'
         . '<div style="max-width:720px;margin:25px auto;background:#fff;border-top:6px solid #3A884C;border-radius:10px;padding:28px;">'
         . '<h1 style="margin:0 0 6px;color:#3A884C;font-size:24px;">Nouvelle demande de devis</h1><p style="color:#69736d;">Référence ' . $reference . '</p>'
@@ -44,11 +48,22 @@ function grinco_quote_send_notification($request, $products, $configurationOverr
         . '<br><strong>Date :</strong> ' . grinco_quote_notification_escape($request['date_demande']) . '</p>'
         . '<p><strong>Message :</strong><br>' . nl2br(grinco_quote_notification_escape($request['message'] === '' ? 'Aucun message' : $request['message'])) . '</p>'
         . '<h2 style="font-size:16px;">Produits demandés</h2><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="padding:9px;text-align:left;background:#edf6ef;">Référence</th><th style="padding:9px;text-align:left;background:#edf6ef;">Produit</th><th style="padding:9px;background:#edf6ef;">Quantité</th></tr></thead><tbody>' . $productRows . '</tbody></table>'
+        . '<div style="margin-top:24px;padding:20px;background:#f5f7f5;border:1px solid #dfe8e1;border-left:4px solid #3A884C;border-radius:8px;">'
+        . '<h2 style="margin:0 0 14px;color:#3A884C;font-size:16px;">Informations de livraison</h2>'
+        . '<p style="margin:0 0 9px;line-height:1.55;"><strong>Type de prix souhaité :</strong><br>' . grinco_quote_notification_escape($deliveryIncoterm) . '</p>'
+        . '<p style="margin:0 0 9px;line-height:1.55;"><strong>Port de destination :</strong><br>' . grinco_quote_notification_escape($deliveryPort) . '</p>'
+        . '<p style="margin:0 0 9px;line-height:1.55;"><strong>Ville finale :</strong><br>' . grinco_quote_notification_escape($deliveryCity) . '</p>'
+        . '<p style="margin:0;line-height:1.55;"><strong>Transport terrestre :</strong><br>' . grinco_quote_notification_escape($deliveryGroundTransport) . '</p></div>'
         . '</div></body></html>';
     $plain = "Nouvelle demande de devis " . $reference . "\n"
         . 'Nom : ' . $request['nom'] . "\nEntreprise : " . $request['entreprise'] . "\nTéléphone : " . $request['telephone']
         . "\nE-mail : " . $request['email'] . "\nDate : " . $request['date_demande'] . "\nMessage : " . $request['message']
-        . "\n\nProduits :\n" . $plainProducts;
+        . "\n\nProduits :\n" . $plainProducts
+        . "\nInformations de livraison :\n"
+        . 'Type de prix souhaité : ' . $deliveryIncoterm . "\n"
+        . 'Port de destination : ' . $deliveryPort . "\n"
+        . 'Ville finale : ' . $deliveryCity . "\n"
+        . 'Transport terrestre : ' . $deliveryGroundTransport . "\n";
 
     $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
     $mail->isSMTP();

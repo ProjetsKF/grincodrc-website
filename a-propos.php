@@ -22,7 +22,7 @@ include __DIR__ . '/includes/header.php';
             <div class="col-sm-6"><div class="feature-box"><i class="bi bi-people"></i><h4>Accompagnement</h4><p>Assurer un suivi convenu avec le client, de l’expression du besoin jusqu’à la livraison.</p></div></div>
           </div>
         </div>
-        <div class="col-lg-6"><img src="assets/img/about/about-17.png" class="img-fluid rounded" alt="Équipe et vision de GRINCO RDC"></div>
+        <div class="col-lg-6"><img src="assets/img/about/about-17.jpg" class="img-fluid rounded" alt="Équipe et vision de GRINCO RDC"></div>
       </div>
     </div>
   </section>
